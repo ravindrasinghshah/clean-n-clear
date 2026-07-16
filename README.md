@@ -1,18 +1,18 @@
 # clean-n-clear
 
-Devpost Hackathon - OpenAI build week - Skin care routine: Clean and Clear.
+Devpost Hackathon - Skin care routine: Clean and Clear.
 
 ## MVP
 
-Clean n Clear is a responsive skincare routine curator for the US market. Users upload a selfie, add routine preferences, and receive a cosmetic skincare routine generated from OpenAI vision analysis plus rule-based safety constraints.
+Clean n Clear is a responsive skincare routine curator for the US market. Users upload a selfie, add routine preferences, and receive a cosmetic skincare routine generated from Gemini image analysis plus rule-based safety constraints.
 
 ## Features
 
 - Mobile-first landing page with a dismissible US-market banner.
 - Selfie upload/capture flow for MVP face analysis.
-- OpenAI vision API endpoint returning structured skin type, face type, concerns, confidence, notes, and safety flags.
+- Gemini image-analysis endpoint returning structured skin type, face type, concerns, confidence, notes, and safety flags.
 - Hybrid routine generation: deterministic safety rules plus plain-language explanations.
-- Guest and email-link Firebase Authentication setup.
+- Browser-local routine saving with no account or database required.
 - Morning, evening, and optional weekly routine steps.
 - Cosmetic safety disclaimer and no-diagnosis positioning.
 
@@ -26,12 +26,8 @@ npm run dev
 Create `.env.local` with:
 
 ```bash
-OPENAI_API_KEY=sk-...
-OPENAI_VISION_MODEL=gpt-4o-mini
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
+GEMINI_API_KEY=...
+GEMINI_VISION_MODEL=gemini-2.0-flash
 ```
 
 ## Deploy to Vercel

@@ -10,10 +10,9 @@ export default function HomePage() {
         <div className="space-y-6">
           <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-sage shadow-soft">AI-assisted skincare MVP</span>
           <h1 className="text-4xl font-bold tracking-tight md:text-6xl">Scan your face. Get a safer skincare routine.</h1>
-          <p className="text-lg text-ink/70">Clean n Clear uses OpenAI vision analysis, rule-based safety constraints, and plain-language explanations to curate routine steps for your skin type, face type, and goals.</p>
+          <p className="text-lg text-ink/70">Clean n Clear uses Gemini image analysis, rule-based safety constraints, and plain-language explanations to curate routine steps for your skin type, face type, and goals.</p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link className="rounded-full bg-clay px-6 py-4 text-center font-semibold text-white shadow-soft" href="/scan">Start face scan</Link>
-            <Link className="rounded-full bg-white px-6 py-4 text-center font-semibold text-ink shadow-soft" href="/auth">Sign in or continue guest</Link>
           </div>
           <SafetyDisclaimer />
         </div>
@@ -24,7 +23,7 @@ export default function HomePage() {
               <li>1. Upload a selfie from mobile or desktop.</li>
               <li>2. Add goals like hydration, redness, or dark spots.</li>
               <li>3. Receive AM, PM, and weekly routine steps.</li>
-              <li>4. Save results with guest or email-code auth.</li>
+              <li>4. Save results privately on this device.</li>
             </ol>
           </div>
         </div>

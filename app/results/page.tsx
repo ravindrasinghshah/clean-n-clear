@@ -2,24 +2,22 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/client';
 import { SafetyDisclaimer } from '@/components/SafetyDisclaimer';
+import { getCurrentResult, saveRoutine as saveRoutineToLocalStorage } from '@/lib/storage/routines';
 import type { RoutineRecommendation, SkinAnalysisResult } from '@/lib/types/skincare';
 
 export default function ResultsPage() {
   const [result, setResult] = useState<{ analysis: SkinAnalysisResult; routine: RoutineRecommendation }>();
   const [saveMessage, setSaveMessage] = useState('');
   useEffect(() => {
-    const stored = sessionStorage.getItem('clean-n-clear-results');
-    if (stored) setResult(JSON.parse(stored));
+    const stored = getCurrentResult();
+    if (stored) setResult(stored);
   }, []);
 
-  async function saveRoutine() {
-    const user = auth.currentUser;
-    if (!user) { setSaveMessage('Sign in as guest or with email before saving.'); return; }
-    await addDoc(collection(db, 'users', user.uid, 'routines'), { ...result, createdAt: serverTimestamp() });
-    setSaveMessage('Routine saved.');
+  function saveRoutine() {
+    if (!result) return;
+    saveRoutineToLocalStorage(result);
+    setSaveMessage('Routine saved on this device.');
   }
 
   if (!result) return <main className="mx-auto max-w-3xl px-5 py-10"><p>No scan result found.</p><Link className="text-clay underline" href="/scan">Start a scan</Link></main>;

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaceCapture } from '@/components/FaceCapture';
 import { PreferenceForm } from '@/components/PreferenceForm';
+import { saveCurrentResult } from '@/lib/storage/routines';
 import type { ScanPreferences } from '@/lib/types/skincare';
 
 const initialPreferences: ScanPreferences = { routineLevel: 'standard', primaryGoal: 'hydration', sensitivities: '', currentRoutine: '' };
@@ -21,7 +22,7 @@ export default function ScanPage() {
     const data = await response.json();
     setLoading(false);
     if (!response.ok) { setError(data.error ?? 'Scan failed.'); return; }
-    sessionStorage.setItem('clean-n-clear-results', JSON.stringify(data));
+    saveCurrentResult(data);
     router.push('/results');
   }
 
