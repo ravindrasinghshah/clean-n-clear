@@ -1,0 +1,75 @@
+import type { RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
+
+const sunscreen: RoutineStep = {
+  name: 'Broad-spectrum SPF 30+',
+  why: 'Daily sunscreen helps protect against UV damage and supports dark spot and anti-aging goals.',
+  guidance: 'Apply generously every morning and reapply when outdoors.'
+};
+
+export function createRoutine(analysis: SkinAnalysisResult, preferences?: Partial<ScanPreferences>): RoutineRecommendation {
+  const minimal = preferences?.routineLevel === 'minimal';
+  const morning: RoutineStep[] = [
+    {
+      name: analysis.skinType === 'dry' ? 'Hydrating cleanser or water rinse' : 'Gentle low-pH cleanser',
+      why: 'A mild cleanse removes oil and residue without stripping the skin barrier.',
+      guidance: 'Massage gently for 30-60 seconds; avoid scrubs.'
+    },
+    {
+      name: analysis.skinType === 'oily' ? 'Lightweight gel moisturizer' : 'Barrier-supporting moisturizer',
+      why: 'Moisturizer helps balance the skin barrier even when skin feels oily.',
+      guidance: 'Use a thin layer; choose fragrance-free if sensitive.'
+    },
+    sunscreen
+  ];
+
+  const evening: RoutineStep[] = [
+    {
+      name: 'Gentle cleanser',
+      why: 'Evening cleansing removes sunscreen, sweat, and pollutants.',
+      guidance: 'Double cleanse only when wearing heavy sunscreen or makeup.'
+    },
+    {
+      name: chooseActive(analysis),
+      why: activeReason(analysis),
+      guidance: 'Start 2 nights per week, then increase only if comfortable.'
+    },
+    {
+      name: analysis.skinType === 'dry' || analysis.concerns.includes('irritation') ? 'Richer moisturizer' : 'Simple moisturizer',
+      why: 'Nighttime barrier support can reduce tightness and irritation.',
+      guidance: 'Apply after actives; skip actives if skin stings or peels.'
+    }
+  ];
+
+  const weekly: RoutineStep[] = minimal
+    ? []
+    : [{ name: 'Optional gentle exfoliation', why: 'Can help with dullness or uneven texture.', guidance: 'Limit to once weekly; do not combine with retinoids the same night.' }];
+
+  return {
+    morning,
+    evening,
+    weekly,
+    avoidOrIntroduceSlowly: [
+      'Avoid starting multiple actives at the same time.',
+      'Avoid harsh physical scrubs and high-fragrance products if sensitive.',
+      'Pause actives when skin is burning, peeling, or persistently irritated.'
+    ],
+    explanation: `This routine prioritizes a ${preferences?.routineLevel ?? 'standard'} number of steps for ${analysis.skinType} skin with focus on ${preferences?.primaryGoal ?? analysis.concerns[0] ?? 'barrier support'}.`,
+    disclaimer: 'This is cosmetic routine guidance, not a diagnosis or medical advice. Seek a dermatologist for severe, painful, rapidly changing, or persistent symptoms.'
+  };
+}
+
+function chooseActive(analysis: SkinAnalysisResult): string {
+  if (analysis.concerns.includes('acne-prone') || analysis.concerns.includes('congestion')) return 'Salicylic acid or adapalene-style acne support';
+  if (analysis.concerns.includes('dark-spots')) return 'Niacinamide or vitamin C support';
+  if (analysis.concerns.includes('fine-lines')) return 'Beginner retinoid support';
+  if (analysis.concerns.includes('redness') || analysis.skinType === 'sensitive') return 'Azelaic acid or niacinamide support';
+  return 'Hydrating serum with glycerin or hyaluronic acid';
+}
+
+function activeReason(analysis: SkinAnalysisResult): string {
+  if (analysis.concerns.includes('acne-prone') || analysis.concerns.includes('congestion')) return 'Oil-soluble or retinoid-style actives may support clogged pore appearance.';
+  if (analysis.concerns.includes('dark-spots')) return 'Brightening ingredients can support a more even-looking tone over time.';
+  if (analysis.concerns.includes('fine-lines')) return 'Retinoid-style products may support smoother-looking texture when tolerated.';
+  if (analysis.concerns.includes('redness') || analysis.skinType === 'sensitive') return 'Barrier-friendly calming actives are less likely to overwhelm reactive skin.';
+  return 'Hydrating ingredients improve temporary dehydration and comfort.';
+}
