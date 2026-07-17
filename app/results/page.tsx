@@ -24,7 +24,7 @@ export default function ResultsPage() {
   }
 
   if (!result) {
-    return <main className="mx-auto max-w-3xl px-5 py-10"><p>No scan result found.</p><Link className="text-clay underline" href="/scan">Start a scan</Link></main>;
+    return <main className="mx-auto max-w-3xl px-5 py-10"><p>No scan result found.</p><Link className="text-ink underline decoration-accent decoration-2" href="/scan">Start a scan</Link></main>;
   }
 
   const { analysis, routine } = result;
@@ -33,7 +33,7 @@ export default function ResultsPage() {
   return (
     <main className="mx-auto max-w-5xl space-y-5 px-5 py-6">
       <section className="rounded-3xl bg-white p-5 shadow-soft">
-        <p className="text-sm font-semibold uppercase text-sage">Your scan summary</p>
+        <p className="text-sm font-semibold uppercase text-ink">Your scan summary</p>
         <h1 className="mt-1 text-3xl font-bold">Your personalized routine is ready</h1>
         <p className="mt-2 text-ink/70">
           This photo suggests <strong className="font-semibold text-ink">{label(analysis.skinType)} skin</strong>
@@ -45,13 +45,13 @@ export default function ResultsPage() {
           <div className="mt-4">
             <h2 className="text-sm font-semibold text-ink">What this routine focuses on</h2>
             <div className="mt-2 flex flex-wrap gap-2">
-              {analysis.concerns.map((concern) => <span className="rounded-full bg-cream px-3 py-1 text-sm" key={concern}>{label(concern)}</span>)}
+              {analysis.concerns.map((concern) => <span className="rounded-full bg-accent-soft px-3 py-1 text-sm" key={concern}>{label(concern)}</span>)}
             </div>
           </div>
         )}
 
         {analysis.notes.length > 0 && (
-          <div className="mt-4 rounded-2xl bg-cream p-4">
+          <div className="mt-4 rounded-2xl bg-accent-soft p-4">
             <h2 className="font-semibold text-ink">What we noticed</h2>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink/70">
               {analysis.notes.map((note) => <li key={note}>{note}</li>)}
@@ -78,7 +78,7 @@ export default function ResultsPage() {
       </section>
 
       {analysis.safetyFlags.length > 0 && (
-        <section className="rounded-3xl border border-clay/20 bg-cream p-5">
+        <section className="rounded-3xl border border-accent/20 bg-accent-soft p-5">
           <h2 className="text-lg font-bold">Keep in mind</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink/70">
             {analysis.safetyFlags.map((flag) => <li key={flag}>{flag}</li>)}
@@ -86,10 +86,10 @@ export default function ResultsPage() {
         </section>
       )}
 
-      {saveMessage && <p className="rounded-xl bg-white p-3 text-sm text-sage shadow-soft" role="status">{saveMessage}</p>}
+      {saveMessage && <p className="rounded-xl border border-accent/20 bg-white p-3 text-sm text-ink shadow-soft" role="status">{saveMessage}</p>}
       <div className="grid gap-3 sm:grid-cols-2">
-        <button className="rounded-full bg-sage px-6 py-4 text-center font-semibold text-white" onClick={saveRoutine}>Save routine</button>
-        <Link className="rounded-full bg-clay px-6 py-4 text-center font-semibold text-white" href="/scan">Scan again</Link>
+        <button className="rounded-full bg-accent px-6 py-4 text-center font-semibold text-ink transition-colors hover:bg-accent/85" onClick={saveRoutine}>Save routine</button>
+        <Link className="rounded-full bg-accent px-6 py-4 text-center font-semibold text-ink transition-colors hover:bg-accent/85" href="/scan">Scan again</Link>
       </div>
     </main>
   );
@@ -101,10 +101,10 @@ function RoutineSection({ title, steps }: { title: string; steps: RoutineRecomme
       <h2 className="text-2xl font-bold">{title}</h2>
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         {steps.map((step) => (
-          <article className="rounded-2xl bg-cream p-4" key={step.name}>
+          <article className="rounded-2xl bg-accent-soft p-4" key={step.name}>
             <h3 className="font-bold">{step.name}</h3>
             <p className="mt-2 text-sm text-ink/70">{step.why}</p>
-            <p className="mt-2 text-sm font-medium text-sage">{step.guidance}</p>
+            <p className="mt-2 text-sm font-medium text-ink">{step.guidance}</p>
           </article>
         ))}
       </div>

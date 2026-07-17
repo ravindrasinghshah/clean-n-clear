@@ -43,7 +43,7 @@ export function FaceCapture({ image, onImage, onPreparationChange }: FaceCapture
 
   return (
     <div className="rounded-3xl bg-white p-4 shadow-soft">
-      <div className="mb-4 rounded-2xl border-2 border-dashed border-clay/30 bg-cream p-6 text-center">
+      <div className="mb-4 rounded-2xl border-2 border-dashed border-accent/30 bg-accent-soft p-6 text-center">
         {image ? (
           <div className="space-y-3">
             <img src={image} alt="Selfie preview" className="mx-auto max-h-80 rounded-2xl object-contain" />
@@ -54,7 +54,7 @@ export function FaceCapture({ image, onImage, onPreparationChange }: FaceCapture
       <label className="sr-only" htmlFor="face-photo">Choose a selfie to analyze</label>
       <input
         id="face-photo"
-        className="w-full rounded-xl border bg-white p-3 disabled:cursor-wait disabled:opacity-60"
+        className="w-full rounded-xl border border-ink/20 bg-white p-3 text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:cursor-wait disabled:opacity-60"
         type="file"
         accept="image/*"
         capture="user"
@@ -68,7 +68,7 @@ export function FaceCapture({ image, onImage, onPreparationChange }: FaceCapture
       <p id="face-photo-guidance" className="mt-2 text-xs text-ink/60">
         {isPreparing ? 'Optimizing your photo for analysis…' : 'Choose a new image any time to replace this preview.'}
       </p>
-      {preparationError && <p className="mt-2 text-sm text-red-700" role="alert">{preparationError}</p>}
+      {preparationError && <p className="mt-2 rounded-xl border border-accent/30 bg-accent-soft p-3 text-sm text-ink" role="alert">{preparationError}</p>}
     </div>
   );
 }

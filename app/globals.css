@@ -4,5 +4,7 @@
 
 :root { color-scheme: light; }
 * { box-sizing: border-box; }
-body { margin: 0; background: #fff8ef; color: #20201f; }
+body { margin: 0; background: #ffffff; color: #071013; }
 button, input, select, textarea { font: inherit; }
+::selection { background: rgba(235, 81, 96, 0.25); color: #071013; }
+:focus-visible { outline: 3px solid rgba(235, 81, 96, 0.55); outline-offset: 3px; }

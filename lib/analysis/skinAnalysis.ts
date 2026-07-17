@@ -14,7 +14,7 @@ import { imageQualityIssueValues } from '@/lib/types/skincare';
 export const MIN_IMAGE_QUALITY_SCORE = 0.7;
 export const MIN_ANALYSIS_CONFIDENCE = 0.7;
 
-const defaultModel = 'gemini-3.5-flash';
+const defaultModel = 'gemini-2.5-pro';// 'gemini-3.5-flash';
 const defaultFallbackModel = 'gemini-2.5-flash';
 const maxInlineImageBytes = 14 * 1024 * 1024;
 const maxAttemptsPerModel = 2;
@@ -504,6 +504,7 @@ export async function analyzeSkinImage(image: ParsedImageData, requestId: string
   try {
     client = new GoogleGenAI({
       apiKey,
+      
       httpOptions: {
         timeout: providerTimeoutMs,
         retryOptions: { attempts: sdkAttemptsPerRequest }

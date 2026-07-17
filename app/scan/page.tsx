@@ -104,7 +104,7 @@ export default function ScanPage() {
         <h1 className="text-3xl font-bold">Face scan</h1>
         <p className="text-ink/70">A clear, front-facing photo helps us create a routine that is more useful and easier to trust.</p>
         <FaceCapture image={image} onImage={handleImageChange} onPreparationChange={setPreparingImage} />
-        <section className="rounded-2xl border border-clay/20 bg-white p-4 text-sm text-ink/70">
+        <section className="rounded-2xl border border-accent/20 bg-white p-4 text-sm text-ink/70">
           <h2 className="font-semibold text-ink">For the clearest scan</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>Use bright, even daylight and avoid strong shadows or backlighting.</li>
@@ -117,8 +117,8 @@ export default function ScanPage() {
         <h2 className="text-2xl font-bold">Personalize routine</h2>
         <PreferenceForm value={preferences} onChange={setPreferences} />
         {retakeFeedback && <RetakeGuidance feedback={retakeFeedback} />}
-        {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        <button disabled={!image || loading || preparingImage || Boolean(retakeFeedback)} onClick={analyze} className="w-full rounded-full bg-clay px-6 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
+        {error && <p className="rounded-xl border border-accent/30 bg-accent-soft p-3 text-sm text-ink">{error}</p>}
+        <button disabled={!image || loading || preparingImage || Boolean(retakeFeedback)} onClick={analyze} className="w-full rounded-full bg-accent px-6 py-4 font-semibold text-ink transition-colors hover:bg-accent/85 disabled:cursor-not-allowed disabled:opacity-50">
           {preparingImage ? 'Preparing photo...' : loading ? 'Checking photo and building routine...' : retakeFeedback ? 'Upload a new photo to continue' : 'Analyze and build routine'}
         </button>
       </section>
@@ -133,8 +133,8 @@ function RetakeGuidance({ feedback }: { feedback: RetakeFeedback }) {
   const confidence = typeof feedback.confidence === 'number' ? Math.round(feedback.confidence * 100) : undefined;
 
   return (
-    <section className="rounded-2xl border border-clay/30 bg-cream p-4" role="status" aria-live="polite">
-      <p className="text-sm font-semibold uppercase tracking-wide text-clay">A clearer photo is needed</p>
+    <section className="rounded-2xl border border-accent/30 bg-accent-soft p-4" role="status" aria-live="polite">
+      <p className="text-sm font-semibold uppercase tracking-wide text-ink">A clearer photo is needed</p>
       <h3 className="mt-1 text-xl font-bold">Let&apos;s retake this before building your routine.</h3>
       <p className="mt-2 text-sm text-ink/70">
         We only create recommendations from photos we can read confidently. Upload a new selfie using the tips below.
