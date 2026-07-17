@@ -11,6 +11,7 @@ Clean n Clear is a responsive skincare routine curator for the US market. Users 
 - Mobile-first landing page with a dismissible US-market banner.
 - Selfie upload/capture flow for MVP face analysis.
 - Gemini image-analysis endpoint returning structured skin type, face type, concerns, confidence, notes, and safety flags.
+- Photo-quality gate that asks for a clearer, front-facing selfie before creating a low-confidence routine.
 - Hybrid routine generation: deterministic safety rules plus plain-language explanations.
 - Browser-local routine saving with no account or database required.
 - Morning, evening, and optional weekly routine steps.
@@ -27,7 +28,8 @@ Create `.env.local` with:
 
 ```bash
 GEMINI_API_KEY=...
-GEMINI_VISION_MODEL=gemini-2.0-flash
+GEMINI_VISION_MODEL=gemini-3.5-flash
+GEMINI_FALLBACK_MODEL=gemini-2.5-flash
 ```
 
 ## Deploy to Vercel
