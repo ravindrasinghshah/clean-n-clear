@@ -46,7 +46,7 @@ export function FaceCapture({ image, onImage, onPreparationChange }: FaceCapture
       <div className="mb-4 rounded-2xl border-2 border-dashed border-accent/30 bg-accent-soft p-6 text-center">
         {image ? (
           <div className="space-y-3">
-            <img src={image} alt="Selfie preview" className="mx-auto max-h-80 rounded-2xl object-contain" />
+            <img src={image} alt="Selfie preview" className="mx-auto max-h-72 rounded-2xl object-contain" />
             <p className="text-sm text-ink/70">Want a better result? You can choose a different photo below.</p>
           </div>
         ) : <p className="text-ink/70">Upload a clear, front-facing selfie in natural light.</p>}
