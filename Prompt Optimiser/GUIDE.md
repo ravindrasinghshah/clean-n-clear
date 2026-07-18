@@ -13,8 +13,23 @@ python -m venv .venv
 copy .env.example .env      # fill in GEMINI_API_KEY and OPENAI_API_KEY (deployment only)
 ```
 
-Put a few real selfies (`.jpg`/`.png`/`.webp`) in `test_images/`. Optionally add
-`test_images/labels.json` (ground-truth) — the grader uses it for accuracy if present.
+Put a few real selfies (`.jpg`/`.png`/`.webp`) in `test_images/`.
+
+**Strongly recommended:** add `test_images/labels.json` with ground truth, keyed
+by filename. Every field is optional — only what you label gets scored:
+
+```json
+{
+  "selfie1.jpg": { "skinType": "oily", "faceType": "round", "concerns": ["acne-prone", "congestion"] },
+  "selfie2.jpg": { "skinType": "dry" }
+}
+```
+
+When labels exist, a deterministic accuracy report (exact match for
+`skinType`/`faceType`, Jaccard overlap for `concerns`) is computed in code each
+iteration and handed to the grader as authoritative — accuracy scoring no longer
+depends on the judge's opinion. Without labels, the grader can still judge
+plausibility against the photos, but not correctness.
 
 ## Running
 
@@ -73,8 +88,11 @@ Two-tier LangGraph state machine. Exploration tunes the prompt cheaply on
 - The winner is always the best-scoring pair tracked in state, never just the last.
 
 **Design invariants:**
-- *Grader is blind to the prompt* — it grades outputs only, so it can't be gamed by
-  prompt wording.
+- *Grader is blind to the prompt* — it never sees the prompt text, so it can't be
+  gamed by prompt wording. It DOES see the test photos, so it judges whether each
+  output matches what is actually visible, not just whether it is well-formed.
+- *Accuracy is computed, not judged* — with `labels.json` present, per-image
+  accuracy is calculated in code and given to the grader as authoritative.
 - *Safety framing is enforced* in the Engineer node (cosmetic-only, no diagnosis,
   `unknown` for low confidence) with a post-rewrite guard + one retry.
 - *Failures are data* — schema/transport errors are recorded per image, never crash the loop.
@@ -93,11 +111,11 @@ Two-tier LangGraph state machine. Exploration tunes the prompt cheaply on
 | `optimizer/graph.py` | Wires nodes together; the two-tier router + promote logic | `main.py` |
 | `optimizer/clients.py` | OpenAI client factory; swaps to local server when `local.enabled` is true | grader, engineer |
 | `optimizer/nodes/executor.py` | Runs prompts against every image (Gemini or local); parses/validates results | graph |
-| `optimizer/nodes/grader.py` | GPT-4o structured grading against criteria; tracks best score | graph |
+| `optimizer/nodes/grader.py` | GPT-4o structured grading against criteria — sees the test photos, computes deterministic label accuracy in code; tracks best score | graph |
 | `optimizer/nodes/engineer.py` | GPT-4o prompt rewriting to close gaps; enforces safety framing | graph |
 | `optimizer/nodes/recorder.py` | Persists each iteration to `runs/<id>.parquet` + `.jsonl` | graph |
 | `runs/` | Per-run output: one parquet row + one jsonl line per iteration | you (review results) |
-| `test_images/` | Your input selfies (+ optional `labels.json`) | Executor node |
+| `test_images/` | Your input selfies (+ recommended `labels.json` ground truth, format in Setup above) | Executor + Grader nodes |
 
 ## Maintaining
 

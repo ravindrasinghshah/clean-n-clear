@@ -42,7 +42,7 @@ iteration) and `runs/<run_id>.jsonl` (full records, human-readable).
 | `optimizer/schemas.py` | All Pydantic models + LangGraph state |
 | `optimizer/graph.py` | Graph wiring and the two-tier router |
 | `optimizer/nodes/executor.py` | Concurrent Gemini runs over the image set |
-| `optimizer/nodes/grader.py` | GPT-4o structured grading (never sees prompts) |
+| `optimizer/nodes/grader.py` | GPT-4o structured grading vs photos + criteria (never sees prompts); deterministic label accuracy computed in code |
 | `optimizer/nodes/engineer.py` | GPT-4o prompt rewriting + safety guard |
 | `optimizer/nodes/recorder.py` | Parquet + JSONL persistence per iteration |
 | `criteria.md` | Ideal-output criteria (edit to steer grading) |
