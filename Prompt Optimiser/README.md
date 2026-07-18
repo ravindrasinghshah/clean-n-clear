@@ -47,4 +47,4 @@ iteration) and `runs/<run_id>.jsonl` (full records, human-readable).
 | `optimizer/nodes/recorder.py` | Parquet + JSONL persistence per iteration |
 | `criteria.md` | Ideal-output criteria (edit to steer grading) |
 | `guides/gemini-prompting.md` | Static Gemini best-practices for the engineer |
-| `seed_prompts.json` | Iteration-0 prompts, extracted verbatim from the app |
+| `config.yaml` | Models, defaults, local mode, and all prompts (seed pair + grader/engineer) |

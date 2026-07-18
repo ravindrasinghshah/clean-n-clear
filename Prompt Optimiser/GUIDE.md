@@ -18,26 +18,31 @@ Put a few real selfies (`.jpg`/`.png`/`.webp`) in `test_images/`. Optionally add
 
 ## Running
 
-The **`--local` flag is the only switch** between the two modes. Add it or omit it.
+```powershell
+python main.py --threshold 85 --criteria criteria.md
+```
 
-| Mode | Command | Models | Keys |
+The **`local.enabled` key in `config.yaml` is the only switch** between the two
+modes — there is no CLI flag for it. The command line stays the same either way.
+
+| Mode | `config.yaml` | Models | Keys |
 |---|---|---|---|
-| **Local smoke test** | `python main.py --threshold 85 --criteria criteria.md --local` | LM Studio server from `config.yaml` `local:` block | none |
-| **Deployment** | `python main.py --threshold 85 --criteria criteria.md` | `gemini-2.5-flash`/`-pro` + `gpt-4o` | `.env` required |
+| **Local smoke test** | `local.enabled: true` | LM Studio server from `config.yaml` `local:` block | none |
+| **Deployment** | `local.enabled: false` | `gemini-2.5-flash`/`-pro` + `gpt-4o` | `.env` required |
+
+```yaml
+local:
+  enabled: false                      # true = route every call to the local server
+  base_url: http://localhost:1234/v1
+  model: qwen/qwen3.5-9b
+```
 
 Common flags: `--images test_images/`, `--max-iter 10`, `--validation-max-iter 3`,
 `--apply` (patch winning prompts into `skinAnalysis.ts` after a y/N diff confirmation).
 
 > **Local mode is for verifying the machinery only** — a small local model on
-> stand-in images produces meaningless scores. Never run `--apply` after `--local`.
-
-To change which local server/model `--local` targets, edit `config.yaml`:
-
-```yaml
-local:
-  base_url: http://localhost:1234/v1
-  model: qwen/qwen3.5-9b
-```
+> stand-in images produces meaningless scores. Never run `--apply` while
+> `local.enabled: true`, and remember to set it back to `false` before a real run.
 
 ## Architecture
 
@@ -80,14 +85,13 @@ Two-tier LangGraph state machine. Exploration tunes the prompt cheaply on
 | File | Function | Used by |
 |---|---|---|
 | `main.py` | CLI entry: parses flags, builds `RunConfig`, runs the graph, prints the winner, handles `--apply` | you (entry point) |
-| `config.yaml` | Model ids, defaults, and the `local:` server block | `main.py` |
+| `config.yaml` | Model ids, defaults, the `local:` mode block (incl. `enabled` switch), and the `prompts:` section (seed pair + grader/engineer prompt texts) — the single place all inputs flow from | `main.py` |
 | `criteria.md` | Ideal-output criteria the grader scores against (edit to steer optimization) | Grader node |
-| `seed_prompts.json` | Iteration-0 prompts, extracted verbatim from `skinAnalysis.ts` | `main.py`, `--apply` |
 | `guides/gemini-prompting.md` | Static Gemini best-practices reference | Engineer node |
 | `.env` / `.env.example` | `GEMINI_API_KEY`, `OPENAI_API_KEY` (deployment mode) | `main.py` |
 | `optimizer/schemas.py` | All Pydantic models + `OptimizerState` (the shared contract) | every node |
 | `optimizer/graph.py` | Wires nodes together; the two-tier router + promote logic | `main.py` |
-| `optimizer/clients.py` | OpenAI client factory; swaps to local server in `--local` mode | grader, engineer |
+| `optimizer/clients.py` | OpenAI client factory; swaps to local server when `local.enabled` is true | grader, engineer |
 | `optimizer/nodes/executor.py` | Runs prompts against every image (Gemini or local); parses/validates results | graph |
 | `optimizer/nodes/grader.py` | GPT-4o structured grading against criteria; tracks best score | graph |
 | `optimizer/nodes/engineer.py` | GPT-4o prompt rewriting to close gaps; enforces safety framing | graph |
@@ -99,10 +103,18 @@ Two-tier LangGraph state machine. Exploration tunes the prompt cheaply on
 
 - **Change what "good" means** → edit `criteria.md` (no code change).
 - **Change models or thresholds** → edit `config.yaml` or pass CLI flags.
+- **Change the grader/engineer prompts** → edit the `prompts:` section in
+  `config.yaml` (no code change). `engineer_system` is a template: keep the
+  `{safety}` and `{guides}` placeholders (filled at runtime with
+  `engineer_safety_constraint` and the Gemini guide) and avoid other literal
+  `{ }` braces in it.
+- **Switch local/deployment mode** → flip `local.enabled` in `config.yaml`.
 - **Output schema changed** in the app → update `SkinAnalysisResult` and the enum
   `Literal`s in `optimizer/schemas.py` to keep the contract in sync with
   `../lib/types/skincare.ts`.
-- **Seed prompts drifted** → `--apply` matches the current strings from
-  `seed_prompts.json` verbatim in the TS file and aborts cleanly if they no longer
-  match; update `seed_prompts.json` if you edit the app prompts by hand.
+- **Change the seed prompts** (the pair being optimized) → edit `prompts.seed`
+  in `config.yaml`. These must match the current strings in `skinAnalysis.ts`
+  verbatim: `--apply` finds them in the TS file by exact text and aborts cleanly
+  if they have drifted, so update `prompts.seed` whenever you edit the app
+  prompts by hand.
 - **Review a run** → open `runs/<id>.jsonl` (human-readable) or load the parquet in pandas.

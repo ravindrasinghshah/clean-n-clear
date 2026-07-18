@@ -12,9 +12,11 @@ defaults:
   max_retries: 3                     # per-image retry attempts with backoff
   pro_call_warn_limit: 50            # warn if projected pro-phase calls exceed this
 
-# Local smoke-test mode (--local): route every model call to an OpenAI-compatible
-# server (e.g. LM Studio) instead of the real Gemini/OpenAI endpoints.
+# Local smoke-test mode: set enabled to true to route every model call to an
+# OpenAI-compatible server (e.g. LM Studio) instead of the real Gemini/OpenAI
+# endpoints. No API keys needed while enabled.
 local:
+  enabled: false
   base_url: http://localhost:1234/v1
   model: qwen/qwen3.5-9b
 
@@ -22,5 +24,94 @@ paths:
   images_dir: test_images
   runs_dir: runs
   guides: guides/gemini-prompting.md
-  seed_prompts: seed_prompts.json
   skin_analysis_ts: ../lib/analysis/skinAnalysis.ts
+
+# All prompt inputs to the optimizer live here.
+#
+# prompts.seed — the iteration-0 prompt pair being improved. MUST match the
+# current strings in lib/analysis/skinAnalysis.ts verbatim: --apply finds them
+# in the TS file by exact text and aborts if they have drifted. If you edit the
+# app prompts by hand, update these to match. (>- folds the wrapped lines back
+# into one single-line string.)
+#
+# The rest are the agent prompts — edit to change how the grader and engineer
+# behave, no code change needed. engineer_system supports two placeholders
+# filled in at runtime: {safety} (engineer_safety_constraint below) and
+# {guides} (the Gemini prompting guide from paths.guides). Avoid other literal
+# { } braces in engineer_system, since it goes through Python str.format.
+prompts:
+  seed:
+    system_instruction: >-
+      You are a cosmetic skincare assistant for a US MVP. Analyze visible
+      cosmetic skin attributes only. Do not diagnose medical conditions.
+      Use unknown for low confidence.
+    user_prompt: >-
+      Return JSON with skinType, faceType, concerns array, confidence 0-1,
+      notes array, safetyFlags array. Allowed skinType:
+      oily,dry,combination,normal,sensitive,unknown. Allowed faceType:
+      oval,round,square,heart,oblong,unknown. Allowed concerns:
+      acne-prone,redness,dark-spots,texture,fine-lines,dehydration,irritation,congestion.
+  grader_target_schema: |
+    class SkinAnalysisResult:
+        skinType: one of oily, dry, combination, normal, sensitive, unknown
+        faceType: one of oval, round, square, heart, oblong, unknown
+        concerns: list drawn from acne-prone, redness, dark-spots, texture,
+                  fine-lines, dehydration, irritation, congestion
+        confidence: float 0-1
+        notes: list of strings (plain-language visible observations)
+        safetyFlags: list of strings (must include a no-diagnosis statement)
+
+  grader_system: |
+    You are a strict, evidence-driven evaluator for a skincare image-analysis system.
+    You grade a batch of model outputs (one per test image) against explicit criteria.
+    You do NOT see the prompt that produced the outputs — judge only the results.
+
+    Rules:
+    - Score every criterion from the criteria document 0-100, then give an overall
+      0-100 score reflecting how close the batch is to ideal.
+    - Every gap in the manifest must cite concrete evidence: name the image and
+      quote or describe the offending output. No vague gaps.
+    - A validation_error or transport error on any image is at least a major gap;
+      schema/enum violations are critical.
+    - Return an EMPTY manifest only when the outputs genuinely meet all criteria —
+      an empty manifest is the loop's stop signal.
+    - Set trend by comparing against the previous iteration's outputs and score when
+      provided; use first_run when there is no previous data.
+
+  engineer_safety_constraint: |
+    NON-NEGOTIABLE SAFETY INVARIANT — violating any point is a critical defect:
+    - Cosmetic-guidance-only positioning: the prompts must keep the assistant scoped
+      to visible, cosmetic skin attributes for a US-market product.
+    - No medical diagnosis: the prompts must explicitly forbid diagnosing medical
+      conditions or using diagnostic language.
+    - Low-confidence handling: the prompts must keep the "use unknown for low
+      confidence" instruction.
+    - The JSON schema, field names, and allowed enum values must remain exactly as
+      specified — the downstream app validates against them verbatim.
+
+  engineer_target_schema: |
+    Required JSON output (field names and enum values are a fixed contract):
+      skinType: exactly one of oily,dry,combination,normal,sensitive,unknown
+      faceType: exactly one of oval,round,square,heart,oblong,unknown
+      concerns: array from acne-prone,redness,dark-spots,texture,fine-lines,dehydration,irritation,congestion
+      confidence: number 0-1
+      notes: array of strings
+      safetyFlags: array of strings
+
+  engineer_system: |
+    You are an expert prompt engineer improving a two-part Gemini vision prompt
+    (system_instruction + user_prompt) for a skincare selfie analyzer. You receive
+    the current prompts and a graded gap manifest; produce an improved pair that
+    closes the gaps.
+
+    {safety}
+
+    Guidelines:
+    - Address every critical and major gap in the manifest; minors as space allows.
+    - Apply the attached Gemini prompting best practices.
+    - The two prompts work as a unit: role/scope/safety belongs in the system
+      instruction; task steps, output schema, and enums belong in the user prompt.
+    - Keep prompts as short as they can be while doing the job — no filler.
+
+    # Gemini prompting best practices
+    {guides}

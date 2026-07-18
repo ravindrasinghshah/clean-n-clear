@@ -8,13 +8,17 @@ Usage (from this folder, with .env holding GEMINI_API_KEY and OPENAI_API_KEY):
 Runs the full LangGraph loop, prints the winning PromptPair with its flash and
 pro scores, and with --apply patches the winner back into
 lib/analysis/skinAnalysis.ts (diff shown, y/N confirmation required).
+
+Local smoke-test mode is toggled via config.yaml (`local.enabled: true`), not a
+CLI flag; while enabled, no API keys are needed. All prompt inputs — the seed
+pair being optimized (`prompts.seed`) and the grader/engineer prompts — live in
+config.yaml's `prompts:` section.
 """
 
 from __future__ import annotations
 
 import argparse
 import difflib
-import json
 import logging
 import os
 import sys
@@ -26,7 +30,7 @@ from dotenv import load_dotenv
 
 from optimizer.graph import build_graph
 from optimizer.nodes.executor import load_test_images
-from optimizer.schemas import IterationRecord, PromptPair, RunConfig
+from optimizer.schemas import AgentPrompts, IterationRecord, PromptPair, RunConfig
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -48,9 +52,6 @@ def parse_args(config: dict) -> argparse.Namespace:
                         help="Max extra improve cycles during pro validation.")
     parser.add_argument("--apply", action="store_true",
                         help="Patch winning prompts into skinAnalysis.ts (with confirmation).")
-    parser.add_argument("--local", action="store_true",
-                        help="Smoke-test mode: route all calls to the local OpenAI-compatible "
-                             "server from config.yaml's `local` section (no API keys needed).")
     return parser.parse_args()
 
 
@@ -69,12 +70,14 @@ def build_run_config(args: argparse.Namespace, config: dict) -> RunConfig:
     if labels_text:
         logging.info("Ground-truth labels found — grader will use them for accuracy.")
 
+    local_enabled = config["local"].get("enabled", False)
     guides_path = BASE_DIR / config["paths"]["guides"]
     return RunConfig(
         run_id=datetime.now().strftime("%Y%m%d-%H%M%S"),
         threshold=args.threshold,
         criteria_text=criteria_path.read_text(encoding="utf-8"),
         guides_text=guides_path.read_text(encoding="utf-8"),
+        agent_prompts=AgentPrompts.model_validate(config["prompts"]),
         labels_text=labels_text,
         images_dir=str(images_dir),
         runs_dir=str(BASE_DIR / config["paths"]["runs_dir"]),
@@ -87,8 +90,8 @@ def build_run_config(args: argparse.Namespace, config: dict) -> RunConfig:
         concurrency=defaults["concurrency"],
         max_retries=defaults["max_retries"],
         pro_call_warn_limit=defaults["pro_call_warn_limit"],
-        local_base_url=config["local"]["base_url"] if args.local else None,
-        local_model=config["local"]["model"] if args.local else None,
+        local_base_url=config["local"]["base_url"] if local_enabled else None,
+        local_model=config["local"]["model"] if local_enabled else None,
     )
 
 
@@ -132,13 +135,12 @@ def _ts_string_literal(text: str) -> str:
 def apply_prompts(winner: PromptPair, config: dict) -> None:
     """Patch the winning prompts into skinAnalysis.ts.
 
-    Locates the CURRENT prompt strings (from seed_prompts.json) verbatim in the
-    file and replaces them; aborts with a clear message if either is missing.
+    Locates the CURRENT prompt strings (config.yaml `prompts.seed`) verbatim in
+    the file and replaces them; aborts with a clear message if either is missing.
     Shows a unified diff and requires y/N confirmation before writing.
     """
     ts_path = (BASE_DIR / config["paths"]["skin_analysis_ts"]).resolve()
-    seeds_raw = json.loads((BASE_DIR / config["paths"]["seed_prompts"]).read_text(encoding="utf-8"))
-    seeds = PromptPair.model_validate(seeds_raw)
+    seeds = PromptPair.model_validate(config["prompts"]["seed"])
 
     original = ts_path.read_text(encoding="utf-8")
     patched = original
@@ -151,8 +153,8 @@ def apply_prompts(winner: PromptPair, config: dict) -> None:
         if old_literal not in patched:
             sys.exit(
                 f"--apply aborted: current {label} not found verbatim in {ts_path}. "
-                "The file has drifted from seed_prompts.json — update the seeds or "
-                "patch manually."
+                "The file has drifted from config.yaml's prompts.seed — update the "
+                "seeds or patch manually."
             )
         patched = patched.replace(old_literal, _ts_string_literal(new))
 
@@ -184,17 +186,16 @@ def main() -> None:
     args = parse_args(config)
 
     load_dotenv(BASE_DIR / ".env")
-    if args.local:
-        logging.info("LOCAL MODE: all calls go to %s", config["local"]["base_url"])
+    if config["local"].get("enabled", False):
+        logging.info("LOCAL MODE (config.yaml local.enabled): all calls go to %s",
+                     config["local"]["base_url"])
     else:
         for key in ("GEMINI_API_KEY", "OPENAI_API_KEY"):
             if not os.environ.get(key):
                 sys.exit(f"Missing required environment variable: {key} (set it in .env)")
     run_config = build_run_config(args, config)
 
-    seeds = PromptPair.model_validate(
-        json.loads((BASE_DIR / config["paths"]["seed_prompts"]).read_text(encoding="utf-8"))
-    )
+    seeds = PromptPair.model_validate(config["prompts"]["seed"])
     initial_state = {
         "iteration": -1,  # executor increments; seed baseline becomes iteration 0
         "validation_iteration": 0,

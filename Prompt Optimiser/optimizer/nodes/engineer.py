@@ -9,6 +9,11 @@ engineer's instructions, and heuristically checked on the result. A pair that
 fails the check gets one corrective retry; if it still fails, the previous
 prompts are kept (no-op iteration) rather than letting a critical defect
 propagate — the plateau guard will end the loop if this repeats.
+
+The engineer's system prompt, safety constraint, and target-schema text come
+from config.yaml's `prompts` section (RunConfig.agent_prompts) — edit them
+there, not here. engineer_system is a template with {safety} and {guides}
+placeholders filled in below.
 """
 
 from __future__ import annotations
@@ -21,47 +26,6 @@ from optimizer.clients import agent_client
 from optimizer.schemas import EngineerOutput, OptimizerState, PromptPair
 
 log = logging.getLogger("optimizer.engineer")
-
-_SAFETY_CONSTRAINT = """\
-NON-NEGOTIABLE SAFETY INVARIANT — violating any point is a critical defect:
-- Cosmetic-guidance-only positioning: the prompts must keep the assistant scoped
-  to visible, cosmetic skin attributes for a US-market product.
-- No medical diagnosis: the prompts must explicitly forbid diagnosing medical
-  conditions or using diagnostic language.
-- Low-confidence handling: the prompts must keep the "use unknown for low
-  confidence" instruction.
-- The JSON schema, field names, and allowed enum values must remain exactly as
-  specified — the downstream app validates against them verbatim.
-"""
-
-_TARGET_SCHEMA = """\
-Required JSON output (field names and enum values are a fixed contract):
-  skinType: exactly one of oily,dry,combination,normal,sensitive,unknown
-  faceType: exactly one of oval,round,square,heart,oblong,unknown
-  concerns: array from acne-prone,redness,dark-spots,texture,fine-lines,dehydration,irritation,congestion
-  confidence: number 0-1
-  notes: array of strings
-  safetyFlags: array of strings
-"""
-
-_SYSTEM = """\
-You are an expert prompt engineer improving a two-part Gemini vision prompt
-(system_instruction + user_prompt) for a skincare selfie analyzer. You receive
-the current prompts and a graded gap manifest; produce an improved pair that
-closes the gaps.
-
-{safety}
-
-Guidelines:
-- Address every critical and major gap in the manifest; minors as space allows.
-- Apply the attached Gemini prompting best practices.
-- The two prompts work as a unit: role/scope/safety belongs in the system
-  instruction; task steps, output schema, and enums belong in the user prompt.
-- Keep prompts as short as they can be while doing the job — no filler.
-
-# Gemini prompting best practices
-{guides}
-"""
 
 
 def _passes_safety(pair: PromptPair) -> bool:
@@ -76,16 +40,13 @@ def _passes_safety(pair: PromptPair) -> bool:
 
 
 def _request_rewrite(
-    client: OpenAI, model: str, user_message: str, guides: str, extra: dict
+    client: OpenAI, model: str, user_message: str, system_text: str, extra: dict
 ) -> EngineerOutput:
     """One structured-output rewrite call."""
     completion = client.chat.completions.parse(
         model=model,
         messages=[
-            {
-                "role": "system",
-                "content": _SYSTEM.format(safety=_SAFETY_CONSTRAINT, guides=guides),
-            },
+            {"role": "system", "content": system_text},
             {"role": "user", "content": user_message},
         ],
         response_format=EngineerOutput,
@@ -107,8 +68,12 @@ def engineer_node(state: OptimizerState) -> dict:
         f"  direction: {gap.suggested_direction}"
         for gap in grade.manifest
     )
+    agent_prompts = config.agent_prompts
+    system_text = agent_prompts.engineer_system.format(
+        safety=agent_prompts.engineer_safety_constraint, guides=config.guides_text
+    )
     user_message = (
-        f"{_TARGET_SCHEMA}\n\n"
+        f"{agent_prompts.engineer_target_schema}\n\n"
         f"# Current system_instruction\n{state['prompts'].system_instruction}\n\n"
         f"# Current user_prompt\n{state['prompts'].user_prompt}\n\n"
         f"# Gap manifest (overall score {grade.overall_score:.1f}/100)\n"
@@ -118,7 +83,7 @@ def engineer_node(state: OptimizerState) -> dict:
 
     client, extra = agent_client(config)
     model = config.local_model or config.agent_model
-    output = _request_rewrite(client, model, user_message, config.guides_text, extra)
+    output = _request_rewrite(client, model, user_message, system_text, extra)
     pair = output.as_pair()
 
     if not _passes_safety(pair):
@@ -130,7 +95,7 @@ def engineer_node(state: OptimizerState) -> dict:
             + "\n\nYour previous attempt DROPPED the safety framing (cosmetic-only "
             "scope, no-diagnosis rule, or unknown-for-low-confidence rule). That is "
             "a critical defect. Rewrite again with all three explicitly present.",
-            config.guides_text,
+            system_text,
             extra,
         )
         pair = output.as_pair()

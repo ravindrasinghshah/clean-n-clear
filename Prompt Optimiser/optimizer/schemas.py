@@ -157,6 +157,20 @@ class IterationRecord(BaseModel):
     timestamp: str
 
 
+class AgentPrompts(BaseModel):
+    """Grader/engineer prompt texts, loaded from config.yaml's `prompts` section.
+
+    engineer_system is a template with {safety} and {guides} placeholders filled
+    at call time (safety = engineer_safety_constraint, guides = the Gemini guide).
+    """
+
+    grader_system: str
+    grader_target_schema: str
+    engineer_system: str
+    engineer_safety_constraint: str
+    engineer_target_schema: str
+
+
 class RunConfig(BaseModel):
     """Immutable run parameters resolved once in main.py."""
 
@@ -164,6 +178,7 @@ class RunConfig(BaseModel):
     threshold: float
     criteria_text: str
     guides_text: str
+    agent_prompts: AgentPrompts
     labels_text: str | None = None  # optional test_images/labels.json contents
     images_dir: str
     runs_dir: str

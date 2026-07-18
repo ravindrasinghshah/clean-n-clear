@@ -6,7 +6,7 @@
 #  but this file is the human-friendly place to see what gets installed.)
 
 langgraph>=0.2         # state-machine orchestration of the optimize loop
-openai>=1.92           # grader + engineer agents (and the --local client)
+openai>=1.92           # grader + engineer agents (and the local-mode client)
 google-genai>=1.0      # Gemini executor calls
 pandas>=2.0            # run persistence (DataFrame -> parquet)
 pyarrow>=15.0          # parquet engine for pandas

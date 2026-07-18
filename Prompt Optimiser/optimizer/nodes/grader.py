@@ -4,6 +4,9 @@ Deliberate blindness: the grader sees the criteria, the target schema/enums,
 this iteration's outputs, and the previous iteration's outputs + score. It
 never sees the prompts — it grades results, not intent. If ground-truth labels
 exist (test_images/labels.json) they are included for accuracy assessment.
+
+The grader's system prompt and target-schema text come from config.yaml's
+`prompts` section (RunConfig.agent_prompts) — edit them there, not here.
 """
 
 from __future__ import annotations
@@ -20,35 +23,6 @@ from optimizer.schemas import (
 )
 
 log = logging.getLogger("optimizer.grader")
-
-_TARGET_SCHEMA = """\
-class SkinAnalysisResult:
-    skinType: one of oily, dry, combination, normal, sensitive, unknown
-    faceType: one of oval, round, square, heart, oblong, unknown
-    concerns: list drawn from acne-prone, redness, dark-spots, texture,
-              fine-lines, dehydration, irritation, congestion
-    confidence: float 0-1
-    notes: list of strings (plain-language visible observations)
-    safetyFlags: list of strings (must include a no-diagnosis statement)
-"""
-
-_SYSTEM = """\
-You are a strict, evidence-driven evaluator for a skincare image-analysis system.
-You grade a batch of model outputs (one per test image) against explicit criteria.
-You do NOT see the prompt that produced the outputs — judge only the results.
-
-Rules:
-- Score every criterion from the criteria document 0-100, then give an overall
-  0-100 score reflecting how close the batch is to ideal.
-- Every gap in the manifest must cite concrete evidence: name the image and
-  quote or describe the offending output. No vague gaps.
-- A validation_error or transport error on any image is at least a major gap;
-  schema/enum violations are critical.
-- Return an EMPTY manifest only when the outputs genuinely meet all criteria —
-  an empty manifest is the loop's stop signal.
-- Set trend by comparing against the previous iteration's outputs and score when
-  provided; use first_run when there is no previous data.
-"""
 
 
 def _summarize_outputs(outputs: list[ImageResult]) -> str:
@@ -77,7 +51,7 @@ def grader_node(state: OptimizerState) -> dict:
 
     sections = [
         "# Grading criteria\n" + config.criteria_text,
-        "# Target schema and enums\n" + _TARGET_SCHEMA,
+        "# Target schema and enums\n" + config.agent_prompts.grader_target_schema,
     ]
     if config.labels_text:
         sections.append(
@@ -99,7 +73,7 @@ def grader_node(state: OptimizerState) -> dict:
     completion = client.chat.completions.parse(
         model=config.local_model or config.agent_model,
         messages=[
-            {"role": "system", "content": _SYSTEM},
+            {"role": "system", "content": config.agent_prompts.grader_system},
             {"role": "user", "content": "\n\n".join(sections)},
         ],
         response_format=GradeReport,
