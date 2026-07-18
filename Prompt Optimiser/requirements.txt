@@ -1,0 +1,15 @@
+# Prompt Optimizer dependencies.
+# Install with:  pip install -r requirements.txt
+#
+# (These mirror the dependencies in pyproject.toml. pyproject.toml is still
+#  needed to make the local `optimizer` package importable via `pip install -e .`,
+#  but this file is the human-friendly place to see what gets installed.)
+
+langgraph>=0.2         # state-machine orchestration of the optimize loop
+openai>=1.92           # grader + engineer agents (and the --local client)
+google-genai>=1.0      # Gemini executor calls
+pandas>=2.0            # run persistence (DataFrame -> parquet)
+pyarrow>=15.0          # parquet engine for pandas
+pydantic>=2.6          # schemas / structured outputs
+python-dotenv>=1.0     # loads API keys from .env
+PyYAML>=6.0            # loads config.yaml
