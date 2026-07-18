@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.env
+runs/
+test_images/*
+!test_images/.gitkeep

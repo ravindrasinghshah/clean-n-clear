@@ -1,0 +1,26 @@
+# Model ids and defaults for CLI parameters. CLI flags override these values.
+models:
+  executor_flash: gemini-2.5-flash   # exploration-phase executor
+  executor_pro: gemini-2.5-pro       # validation-phase executor
+  agent: gpt-4o                      # grader + prompt engineer
+
+defaults:
+  max_iterations: 10                 # exploration cap
+  validation_max_iterations: 3       # extra improve cycles allowed on pro
+  plateau_patience: 3                # consecutive non-improving iterations before promoting
+  concurrency: 4                     # parallel Gemini calls per iteration
+  max_retries: 3                     # per-image retry attempts with backoff
+  pro_call_warn_limit: 50            # warn if projected pro-phase calls exceed this
+
+# Local smoke-test mode (--local): route every model call to an OpenAI-compatible
+# server (e.g. LM Studio) instead of the real Gemini/OpenAI endpoints.
+local:
+  base_url: http://localhost:1234/v1
+  model: qwen/qwen3.5-9b
+
+paths:
+  images_dir: test_images
+  runs_dir: runs
+  guides: guides/gemini-prompting.md
+  seed_prompts: seed_prompts.json
+  skin_analysis_ts: ../lib/analysis/skinAnalysis.ts
