@@ -59,6 +59,57 @@ Common flags: `--images test_images/`, `--max-iter 10`, `--validation-max-iter 3
 > stand-in images produces meaningless scores. Never run `--apply` while
 > `local.enabled: true`, and remember to set it back to `false` before a real run.
 
+## config.yaml reference
+
+Everything the optimizer consumes flows from `config.yaml`. Section by section:
+
+### `models:` — which model does which job
+
+| Key | Job | Notes |
+|---|---|---|
+| `executor_flash` | Runs the candidate prompts on every test image during **exploration** (the cheap tuning loop) | Should match or be cheaper than the app's production model |
+| `executor_pro` | Re-runs the best prompts during **validation** (the expensive confirmation pass) | Use the strongest Gemini you'd consider shipping against |
+| `agent` | Both the **grader** (scores outputs, needs vision since it sees photos) and the **engineer** (rewrites prompts) | Must be an OpenAI model with vision + structured outputs (e.g. `gpt-4o`) |
+
+### `defaults:` — loop tuning knobs (CLI flags override the first two)
+
+| Key | Meaning | When to change |
+|---|---|---|
+| `max_iterations` | Cap on exploration (flash) iterations before the best pair is promoted anyway | Raise if runs keep ending at the cap while still improving; CLI `--max-iter` overrides |
+| `validation_max_iterations` | Extra rewrite cycles allowed on pro if the promoted pair scores below threshold | Keep small — pro calls are the expensive ones; CLI `--validation-max-iter` overrides |
+| `plateau_patience` | Consecutive non-improving iterations before exploration gives up and promotes the best so far | Raise to push through noisy score dips, lower to save calls |
+| `concurrency` | Parallel executor calls per iteration (thread pool size) | Lower if you hit Gemini rate limits |
+| `max_retries` | Per-image retry attempts (exponential backoff) before the failure is recorded as data | Raise on a flaky connection |
+| `pro_call_warn_limit` | If projected pro-phase calls (images × validation cycles) exceed this, a cost warning is logged before validation starts | Set to whatever pro-call count would make you wince |
+
+### `local:` — smoke-test mode
+
+| Key | Meaning |
+|---|---|
+| `enabled` | `true` routes **every** call (executor + grader + engineer) to the local server; `false` uses real Gemini + OpenAI. The only mode switch — see Running above |
+| `base_url` | OpenAI-compatible endpoint (e.g. LM Studio's `http://localhost:1234/v1`) |
+| `model` | Model id to request from that server — must accept images, since both the executor and grader send photos |
+
+### `paths:` — where inputs and outputs live (relative to this folder)
+
+| Key | Points at |
+|---|---|
+| `images_dir` | Test selfie folder (CLI `--images` overrides) |
+| `runs_dir` | Where per-iteration parquet/jsonl artifacts are written |
+| `guides` | The Gemini best-practices markdown given to the engineer |
+| `skin_analysis_ts` | The app file `--apply` patches winning prompts into |
+
+### `prompts:` — every prompt the run uses
+
+| Key | Role |
+|---|---|
+| `seed.system_instruction` / `seed.user_prompt` | The iteration-0 pair being optimized — **must match `skinAnalysis.ts` verbatim** or `--apply` aborts (see Maintaining) |
+| `grader_system` | The grader's instructions: strictness rules, photo grounding, how to treat the deterministic accuracy report |
+| `grader_target_schema` | Schema/enum description shown to the grader |
+| `engineer_system` | The engineer's instructions — a template; keep the `{safety}` and `{guides}` placeholders and avoid other literal `{ }` braces |
+| `engineer_safety_constraint` | The non-negotiable safety invariant substituted into `{safety}` |
+| `engineer_target_schema` | The fixed JSON contract shown to the engineer |
+
 ## Architecture
 
 Two-tier LangGraph state machine. Exploration tunes the prompt cheaply on
@@ -103,7 +154,7 @@ Two-tier LangGraph state machine. Exploration tunes the prompt cheaply on
 | File | Function | Used by |
 |---|---|---|
 | `main.py` | CLI entry: parses flags, builds `RunConfig`, runs the graph, prints the winner, handles `--apply` | you (entry point) |
-| `config.yaml` | Model ids, defaults, the `local:` mode block (incl. `enabled` switch), and the `prompts:` section (seed pair + grader/engineer prompt texts) — the single place all inputs flow from | `main.py` |
+| `config.yaml` | The single place all inputs flow from — every key documented in the config.yaml reference above | `main.py` |
 | `criteria.md` | Ideal-output criteria the grader scores against (edit to steer optimization) | Grader node |
 | `guides/gemini-prompting.md` | Static Gemini best-practices reference | Engineer node |
 | `.env` / `.env.example` | `GEMINI_API_KEY`, `OPENAI_API_KEY` (deployment mode) | `main.py` |
