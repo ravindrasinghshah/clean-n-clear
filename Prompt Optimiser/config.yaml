@@ -41,24 +41,64 @@ paths:
 # { } braces in engineer_system, since it goes through Python str.format.
 prompts:
   seed:
-    system_instruction: >-
-      You are a cosmetic skincare assistant for a US MVP. Analyze visible
-      cosmetic skin attributes only. Do not diagnose medical conditions.
-      Use unknown for low confidence.
-    user_prompt: >-
-      Return JSON with skinType, faceType, concerns array, confidence 0-1,
-      notes array, safetyFlags array. Allowed skinType:
-      oily,dry,combination,normal,sensitive,unknown. Allowed faceType:
-      oval,round,square,heart,oblong,unknown. Allowed concerns:
-      acne-prone,redness,dark-spots,texture,fine-lines,dehydration,irritation,congestion.
+    system_instruction: |
+      You are a cosmetic skincare vision assistant for a US-market MVP. Describe
+      only visible, cosmetic skin attributes from the selfie. Do NOT diagnose
+      medical conditions, name diseases, or give routine, product, or treatment
+      advice — a separate program turns your observations into recommendations.
+      When a feature is unclear or the image is poor, lower confidence and use
+      "unknown" rather than guessing. If anything looks like it needs in-person
+      care (for example a mole or a lesion), set referToProfessional.recommended
+      to true and say why WITHOUT naming a condition.
+    user_prompt: |
+      Look at the selfie and return ONLY a JSON object describing visible
+      cosmetic skin attributes. Include no routine or product advice.
+
+      Fields:
+      - skinType: one of oily, dry, combination, normal, sensitive, unknown
+      - faceType: one of oval, round, square, heart, oblong, unknown
+      - confidence: number 0-1 (overall)
+      - observations: array, ordered most-prominent first, each object:
+          - attribute: one of acne-prone, redness, dark-spots, texture,
+            fine-lines, dehydration, irritation, congestion
+          - prominence: one of mild, moderate, prominent (visible appearance,
+            not medical severity)
+          - regions: array from forehead, nose, cheeks, chin, perioral,
+            undereye, jawline, overall
+          - confidence: number 0-1
+          - evidence: short phrase describing what is visible that supports this
+      - surface: object:
+          - oiliness: one of low, balanced, high-tzone, high-overall, unknown
+          - hydration: one of low, adequate, unknown
+          - sensitivitySignals: one of none, mild, notable, unknown
+      - notes: array of short plain-language visible observations (no diagnosis)
+      - referToProfessional: object { recommended: boolean, reason: string
+        (why to see someone in person; never name a condition) }
+      - imageQuality: object { usable: boolean, issues: array of short strings }
+      - safetyFlags: array of strings; include a statement that this is cosmetic
+        guidance from a photo, not a medical diagnosis
   grader_target_schema: |
-    class SkinAnalysisResult:
+    class SkinObservation:
         skinType: one of oily, dry, combination, normal, sensitive, unknown
         faceType: one of oval, round, square, heart, oblong, unknown
-        concerns: list drawn from acne-prone, redness, dark-spots, texture,
-                  fine-lines, dehydration, irritation, congestion
-        confidence: float 0-1
-        notes: list of strings (plain-language visible observations)
+        confidence: float 0-1 (overall)
+        observations: list, ordered most-prominent first, of:
+            attribute: one of acne-prone, redness, dark-spots, texture,
+                       fine-lines, dehydration, irritation, congestion
+            prominence: one of mild, moderate, prominent (visible appearance,
+                        NOT medical severity)
+            regions: list from forehead, nose, cheeks, chin, perioral,
+                     undereye, jawline, overall
+            confidence: float 0-1
+            evidence: short phrase citing what is visible
+        surface:
+            oiliness: one of low, balanced, high-tzone, high-overall, unknown
+            hydration: one of low, adequate, unknown
+            sensitivitySignals: one of none, mild, notable, unknown
+        notes: list of strings (plain-language visible observations, no diagnosis)
+        referToProfessional: object { recommended: bool, reason: str
+                             (why to see someone in person; no condition named) }
+        imageQuality: object { usable: bool, issues: list of short strings }
         safetyFlags: list of strings (must include a no-diagnosis statement)
 
   grader_system: |
@@ -69,8 +109,18 @@ prompts:
 
     Rules:
     - Look at each photo and judge whether its output describes what is actually
-      visible — an implausible skinType/faceType/concern for the photo is a gap
-      even if the output is well-formed. Cite visual evidence when you flag one.
+      visible — an implausible skinType/faceType/observation for the photo is a
+      gap even if the output is well-formed. Cite visual evidence when you flag one.
+    - observations must be ordered most-prominent first, and every observation's
+      `evidence` must match something actually visible in that photo; a listed
+      attribute with no visible support, or a wrong prominence/region, is a gap.
+    - `surface` (oiliness/hydration/sensitivitySignals) and `imageQuality` must be
+      consistent with the photo — e.g. a dark, blurry, or filtered selfie marked
+      usable:true, or high-overall oiliness on visibly matte skin, is a gap.
+    - The output is OBSERVATIONS ONLY. Any routine, product, ingredient, or
+      treatment recommendation in the output is a critical gap.
+    - referToProfessional must never name or imply a specific medical condition;
+      naming one is a critical gap.
     - If a "Deterministic accuracy vs ground truth" section is present, its
       numbers were computed in code from ground-truth labels. They are
       authoritative for accuracy-related criteria: base your accuracy scoring on
@@ -88,22 +138,38 @@ prompts:
 
   engineer_safety_constraint: |
     NON-NEGOTIABLE SAFETY INVARIANT — violating any point is a critical defect:
-    - Cosmetic-guidance-only positioning: the prompts must keep the assistant scoped
-      to visible, cosmetic skin attributes for a US-market product.
+    - Cosmetic-observation-only positioning: the prompts must keep the assistant
+      scoped to describing visible, cosmetic skin attributes for a US-market
+      product. The prompts must NOT ask for routine, product, ingredient, or
+      treatment advice — a separate program produces those from the observations.
     - No medical diagnosis: the prompts must explicitly forbid diagnosing medical
-      conditions or using diagnostic language.
-    - Low-confidence handling: the prompts must keep the "use unknown for low
-      confidence" instruction.
+      conditions, naming diseases, or using diagnostic language. Uncertain or
+      serious-looking findings go to referToProfessional.recommended WITHOUT
+      naming a condition.
+    - Low-confidence handling: the prompts must keep the "lower confidence and use
+      unknown when unsure or the image is poor" instruction.
     - The JSON schema, field names, and allowed enum values must remain exactly as
-      specified — the downstream app validates against them verbatim.
+      specified in the target schema — the downstream program validates against
+      them verbatim.
 
   engineer_target_schema: |
     Required JSON output (field names and enum values are a fixed contract):
       skinType: exactly one of oily,dry,combination,normal,sensitive,unknown
       faceType: exactly one of oval,round,square,heart,oblong,unknown
-      concerns: array from acne-prone,redness,dark-spots,texture,fine-lines,dehydration,irritation,congestion
-      confidence: number 0-1
+      confidence: number 0-1 (overall)
+      observations: array, ordered most-prominent first, of objects:
+        attribute: one of acne-prone,redness,dark-spots,texture,fine-lines,dehydration,irritation,congestion
+        prominence: one of mild,moderate,prominent
+        regions: array from forehead,nose,cheeks,chin,perioral,undereye,jawline,overall
+        confidence: number 0-1
+        evidence: string
+      surface: object {
+        oiliness: one of low,balanced,high-tzone,high-overall,unknown;
+        hydration: one of low,adequate,unknown;
+        sensitivitySignals: one of none,mild,notable,unknown }
       notes: array of strings
+      referToProfessional: object { recommended: boolean, reason: string }
+      imageQuality: object { usable: boolean, issues: array of strings }
       safetyFlags: array of strings
 
   engineer_system: |
@@ -119,6 +185,9 @@ prompts:
     - Apply the attached Gemini prompting best practices.
     - The two prompts work as a unit: role/scope/safety belongs in the system
       instruction; task steps, output schema, and enums belong in the user prompt.
+    - The output is observations only — never let the prompts drift into
+      recommending routines, products, or treatments. Steer the model to ground
+      each observation in visible evidence and to order them most-prominent first.
     - Keep prompts as short as they can be while doing the job — no filler.
 
     # Gemini prompting best practices

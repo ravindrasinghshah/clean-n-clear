@@ -111,7 +111,7 @@ def _accuracy_report(outputs: list[ImageResult], labels_text: str) -> str | None
                         f"expected {expected['faceType']}"
                     )
             if "concerns" in expected:
-                got = set(out.parsed.concerns)
+                got = {obs.attribute for obs in out.parsed.observations}
                 want = set(expected["concerns"])
                 overlap = len(got & want) / len(got | want) if got | want else 1.0
                 jaccards.append(overlap)

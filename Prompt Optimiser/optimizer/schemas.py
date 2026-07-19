@@ -14,12 +14,14 @@ from typing import Literal, TypedDict
 from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
-# Target output contract (mirror of lib/types/skincare.ts)
+# Target output contract — observation-only. Gemini emits ONLY visible cosmetic
+# observations; a separate program turns these into routines/products. The app
+# TypeScript (lib/types/skincare.ts) has not yet been migrated to this shape.
 # ---------------------------------------------------------------------------
 
 SkinType = Literal["oily", "dry", "combination", "normal", "sensitive", "unknown"]
 FaceType = Literal["oval", "round", "square", "heart", "oblong", "unknown"]
-SkinConcern = Literal[
+Attribute = Literal[
     "acne-prone",
     "redness",
     "dark-spots",
@@ -29,16 +31,62 @@ SkinConcern = Literal[
     "irritation",
     "congestion",
 ]
+Region = Literal[
+    "forehead", "nose", "cheeks", "chin", "perioral", "undereye", "jawline", "overall"
+]
+Prominence = Literal["mild", "moderate", "prominent"]
+Oiliness = Literal["low", "balanced", "high-tzone", "high-overall", "unknown"]
+Hydration = Literal["low", "adequate", "unknown"]
+SensitivitySignals = Literal["none", "mild", "notable", "unknown"]
 
 
-class SkinAnalysisResult(BaseModel):
-    """The JSON contract Gemini must satisfy — the thing being optimized for."""
+class Observation(BaseModel):
+    """One visible cosmetic attribute, grounded in what the photo shows."""
+
+    attribute: Attribute
+    prominence: Prominence
+    regions: list[Region]
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence: str
+
+
+class Surface(BaseModel):
+    """Observational surface axes that sharpen downstream product choices."""
+
+    oiliness: Oiliness
+    hydration: Hydration
+    sensitivitySignals: SensitivitySignals
+
+
+class ReferToProfessional(BaseModel):
+    """Flag (never a diagnosis) that something is better assessed in person."""
+
+    recommended: bool
+    reason: str
+
+
+class ImageQuality(BaseModel):
+    """The model's own read on whether the selfie is usable."""
+
+    usable: bool
+    issues: list[str]
+
+
+class SkinObservation(BaseModel):
+    """The JSON contract Gemini must satisfy — the thing being optimized for.
+
+    Observations only: no routine, product, or treatment advice, and no medical
+    diagnosis. ``observations`` is ordered most-prominent first.
+    """
 
     skinType: SkinType
     faceType: FaceType
-    concerns: list[SkinConcern]
     confidence: float = Field(ge=0.0, le=1.0)
+    observations: list[Observation]
+    surface: Surface
     notes: list[str]
+    referToProfessional: ReferToProfessional
+    imageQuality: ImageQuality
     safetyFlags: list[str]
 
 
@@ -69,7 +117,7 @@ class ImageResult(BaseModel):
 
     image_name: str
     raw_text: str = ""
-    parsed: SkinAnalysisResult | None = None
+    parsed: SkinObservation | None = None
     validation_error: str | None = None
     error: str | None = None
     latency_s: float = 0.0

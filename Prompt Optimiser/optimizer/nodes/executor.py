@@ -23,7 +23,7 @@ from google.genai import types
 from openai import OpenAI
 from pydantic import ValidationError
 
-from optimizer.schemas import ImageResult, OptimizerState, PromptPair, SkinAnalysisResult
+from optimizer.schemas import ImageResult, OptimizerState, PromptPair, SkinObservation
 
 log = logging.getLogger("optimizer.executor")
 
@@ -172,7 +172,7 @@ def _run_one_image(
         output_tokens=output_tokens,
     )
     try:
-        result.parsed = SkinAnalysisResult.model_validate(json.loads(raw))
+        result.parsed = SkinObservation.model_validate(json.loads(raw))
     except (json.JSONDecodeError, ValidationError) as exc:
         result.validation_error = str(exc)
     return result
