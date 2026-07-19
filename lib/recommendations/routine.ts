@@ -8,6 +8,7 @@ const sunscreen: RoutineStep = {
 
 export function createRoutine(analysis: SkinAnalysisResult, preferences?: Partial<ScanPreferences>): RoutineRecommendation {
   const minimal = preferences?.routineLevel === 'minimal';
+  const primaryGoal = preferences?.primaryGoal;
   const morning: RoutineStep[] = [
     {
       name: analysis.skinType === 'dry' ? 'Hydrating cleanser or water rinse' : 'Gentle low-pH cleanser',
@@ -29,8 +30,8 @@ export function createRoutine(analysis: SkinAnalysisResult, preferences?: Partia
       guidance: 'Double cleanse only when wearing heavy sunscreen or makeup.'
     },
     {
-      name: chooseActive(analysis),
-      why: activeReason(analysis),
+      name: chooseActive(analysis, primaryGoal),
+      why: activeReason(analysis, primaryGoal),
       guidance: 'Start 2 nights per week, then increase only if comfortable.'
     },
     {
@@ -44,32 +45,54 @@ export function createRoutine(analysis: SkinAnalysisResult, preferences?: Partia
     ? []
     : [{ name: 'Optional gentle exfoliation', why: 'Can help with dullness or uneven texture.', guidance: 'Limit to once weekly; do not combine with retinoids the same night.' }];
 
+  const avoidOrIntroduceSlowly = [
+    'Avoid starting multiple actives at the same time.',
+    'Avoid harsh physical scrubs and high-fragrance products if sensitive.',
+    'Pause actives when skin is burning, peeling, or persistently irritated.'
+  ];
+
+  if (preferences?.sensitivities?.trim()) {
+    avoidOrIntroduceSlowly.push('You noted sensitivities or allergies: check every ingredient list, avoid your known triggers, and patch test new products.');
+  }
+
+  if (preferences?.currentRoutine?.trim()) {
+    avoidOrIntroduceSlowly.push('Keep any familiar products that feel comfortable, and introduce only one new product at a time.');
+  }
+
   return {
     morning,
     evening,
     weekly,
-    avoidOrIntroduceSlowly: [
-      'Avoid starting multiple actives at the same time.',
-      'Avoid harsh physical scrubs and high-fragrance products if sensitive.',
-      'Pause actives when skin is burning, peeling, or persistently irritated.'
-    ],
-    explanation: `This routine prioritizes a ${preferences?.routineLevel ?? 'standard'} number of steps for ${analysis.skinType} skin with focus on ${preferences?.primaryGoal ?? analysis.concerns[0] ?? 'barrier support'}.`,
+    avoidOrIntroduceSlowly,
+    explanation: `This ${preferences?.routineLevel ?? 'standard'} routine supports ${goalLabel(primaryGoal ?? analysis.concerns[0] ?? 'barrier support')} while keeping the focus on gentle, consistent care for ${analysis.skinType} skin.`,
     disclaimer: 'This is cosmetic routine guidance, not a diagnosis or medical advice. Seek a dermatologist for severe, painful, rapidly changing, or persistent symptoms.'
   };
 }
 
-function chooseActive(analysis: SkinAnalysisResult): string {
+function chooseActive(analysis: SkinAnalysisResult, primaryGoal?: ScanPreferences['primaryGoal']): string {
+  if (analysis.concerns.includes('redness') || analysis.skinType === 'sensitive') return 'Azelaic acid or niacinamide support';
   if (analysis.concerns.includes('acne-prone') || analysis.concerns.includes('congestion')) return 'Salicylic acid or adapalene-style acne support';
   if (analysis.concerns.includes('dark-spots')) return 'Niacinamide or vitamin C support';
   if (analysis.concerns.includes('fine-lines')) return 'Beginner retinoid support';
-  if (analysis.concerns.includes('redness') || analysis.skinType === 'sensitive') return 'Azelaic acid or niacinamide support';
+  if (primaryGoal === 'acne') return 'Salicylic acid or adapalene-style acne support';
+  if (primaryGoal === 'dark-spots' || primaryGoal === 'glow') return 'Niacinamide or vitamin C support';
+  if (primaryGoal === 'anti-aging') return 'Beginner retinoid support';
+  if (primaryGoal === 'redness') return 'Azelaic acid or niacinamide support';
   return 'Hydrating serum with glycerin or hyaluronic acid';
 }
 
-function activeReason(analysis: SkinAnalysisResult): string {
+function activeReason(analysis: SkinAnalysisResult, primaryGoal?: ScanPreferences['primaryGoal']): string {
+  if (analysis.concerns.includes('redness') || analysis.skinType === 'sensitive') return 'Barrier-friendly calming actives are less likely to overwhelm reactive skin.';
   if (analysis.concerns.includes('acne-prone') || analysis.concerns.includes('congestion')) return 'Oil-soluble or retinoid-style actives may support clogged pore appearance.';
   if (analysis.concerns.includes('dark-spots')) return 'Brightening ingredients can support a more even-looking tone over time.';
   if (analysis.concerns.includes('fine-lines')) return 'Retinoid-style products may support smoother-looking texture when tolerated.';
-  if (analysis.concerns.includes('redness') || analysis.skinType === 'sensitive') return 'Barrier-friendly calming actives are less likely to overwhelm reactive skin.';
+  if (primaryGoal === 'acne') return 'This supports the appearance of congestion and breakouts while being introduced gradually.';
+  if (primaryGoal === 'dark-spots' || primaryGoal === 'glow') return 'Brightening ingredients can support a more even-looking tone over time.';
+  if (primaryGoal === 'anti-aging') return 'Retinoid-style products may support smoother-looking texture when tolerated.';
+  if (primaryGoal === 'redness') return 'Barrier-friendly calming actives are less likely to overwhelm reactive skin.';
   return 'Hydrating ingredients improve temporary dehydration and comfort.';
+}
+
+function goalLabel(goal: string) {
+  return goal.replace('-', ' ');
 }

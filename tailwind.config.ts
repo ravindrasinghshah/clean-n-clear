@@ -5,13 +5,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cream: '#fff8ef',
-        clay: '#b8694f',
-        sage: '#617d62',
-        ink: '#20201f'
+        accent: '#eb5160',
+        'accent-soft': '#fdeeef',
+        ink: '#071013'
       },
       boxShadow: {
-        soft: '0 20px 60px rgba(32, 32, 31, 0.10)'
+        soft: '0 20px 60px rgba(7, 16, 19, 0.12)'
       }
     }
   },
