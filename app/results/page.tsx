@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { SafetyDisclaimer } from '@/components/SafetyDisclaimer';
 import { getCurrentResult, saveRoutine as saveRoutineToLocalStorage } from '@/lib/storage/routines';
 import type { ScanResult } from '@/lib/storage/routines';
-import type { ProductRecommendation, RoutineRecommendation } from '@/lib/types/skincare';
+import type { RoutineRecommendation } from '@/lib/types/skincare';
 
 export default function ResultsPage() {
   const [result, setResult] = useState<ScanResult>();
@@ -216,7 +216,7 @@ function RoutineSection({ title, label: sectionLabel, steps }: { title: string; 
   );
 }
 
-function ProductRecommendations({ products }: { products: ProductRecommendation[] }) {
+function ProductRecommendations({ products }: { products: NonNullable<RoutineRecommendation['morning'][number]['products']> }) {
   return (
     <div className="mt-4 rounded-2xl bg-accent-soft/70 p-3">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink/70">Product ideas</p>
@@ -239,7 +239,7 @@ function ProductRecommendations({ products }: { products: ProductRecommendation[
   );
 }
 
-function formatProductName(product: ProductRecommendation) {
+function formatProductName(product: NonNullable<RoutineRecommendation['morning'][number]['products']>[number]) {
   return [product.brand, product.name].filter(Boolean).join(' ');
 }
 
