@@ -2,13 +2,16 @@ import type { ScanPreferences, SkinConcern, SkinType } from '@/lib/types/skincar
 
 export type ProductCategory = 'cleanser' | 'moisturizer' | 'sunscreen' | 'treatment' | 'exfoliant';
 
-export interface ProductRecommendation {
+export interface RoutineProduct {
   name: string;
   category: ProductCategory;
+  tags: string[];
+}
+
+export interface ProductRecommendation extends RoutineProduct {
   skinTypes: SkinType[];
   concerns: SkinConcern[];
   goals: ScanPreferences['primaryGoal'][];
-  tags: string[];
 }
 
 export const productCatalog: ProductRecommendation[] = [

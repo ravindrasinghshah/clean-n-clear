@@ -1,5 +1,5 @@
-import { productCatalog, type ProductCategory, type ProductRecommendation } from '@/lib/constants/products';
-import type { RoutineProduct, RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
+import { productCatalog, type ProductCategory, type ProductRecommendation, type RoutineProduct } from '@/lib/constants/routine-products';
+import type { RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
 
 const sensitivityTags = ['fragrance-free', 'gentle', 'sensitive-skin'];
 
