@@ -78,10 +78,27 @@ export type SkinImageAnalysisOutcome =
       httpStatus: number;
     };
 
+export interface ProductRecommendation {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  link: string;
+  imageUrl?: string;
+  category: string;
+  skinTypes: SkinType[];
+  concerns: SkinConcern[];
+  routineStep: string;
+  tags: string[];
+  affiliateDisclosure?: string;
+  retailer?: string;
+}
+
 export interface RoutineStep {
   name: string;
   why: string;
   guidance: string;
+  products?: ProductRecommendation[];
 }
 
 export interface RoutineRecommendation {
