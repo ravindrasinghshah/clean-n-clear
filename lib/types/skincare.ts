@@ -78,25 +78,10 @@ export type SkinImageAnalysisOutcome =
       httpStatus: number;
     };
 
-export type ProductCategory = 'cleanser' | 'moisturizer' | 'sunscreen' | 'active' | 'exfoliant';
-
-export interface ProductCatalogItem {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  link: `https://${string}`;
-  category: ProductCategory;
-  metadata: {
-    routineCategory: ProductCategory;
-  };
-}
-
 export interface RoutineStep {
   name: string;
   why: string;
   guidance: string;
-  category: ProductCategory;
 }
 
 export interface RoutineRecommendation {

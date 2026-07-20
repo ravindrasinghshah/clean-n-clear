@@ -1,6 +1,6 @@
-import { productCatalog } from '@/lib/recommendations/products';
-import { createRoutine, getRoutineCategories } from '@/lib/recommendations/routine';
-import type { ProductCatalogItem, SkinAnalysisResult } from '@/lib/types/skincare';
+import { productCatalog, type ProductCatalogItem, type ProductCategory } from '@/lib/recommendations/products';
+import { createRoutine } from '@/lib/recommendations/routine';
+import type { RoutineStep, SkinAnalysisResult } from '@/lib/types/skincare';
 
 const sampleAnalysis: SkinAnalysisResult = {
   skinType: 'combination',
@@ -16,6 +16,14 @@ const sampleAnalysis: SkinAnalysisResult = {
   notes: [],
   safetyFlags: []
 };
+
+const routineStepCategoryMatchers = [
+  { category: 'sunscreen', match: /spf|sunscreen/i },
+  { category: 'exfoliant', match: /exfoliation|exfoliant/i },
+  { category: 'cleanser', match: /cleanser|cleanse|rinse/i },
+  { category: 'moisturizer', match: /moisturizer/i },
+  { category: 'active', match: /acid|niacinamide|vitamin c|retinoid|adapalene|serum/i }
+] as const satisfies readonly { category: ProductCategory; match: RegExp }[];
 
 export function validateProductCatalog(catalog: readonly ProductCatalogItem[] = productCatalog): string[] {
   const errors: string[] = [];
@@ -44,16 +52,37 @@ export function validateProductCatalog(catalog: readonly ProductCatalogItem[] = 
     }
   }
 
-  const routine = createRoutine(sampleAnalysis, { routineLevel: 'standard', primaryGoal: 'hydration' });
   const catalogCategories = new Set(catalog.map((product) => product.category));
 
-  for (const category of getRoutineCategories(routine)) {
+  for (const category of getRoutineCategories()) {
     if (!catalogCategories.has(category)) {
       errors.push(`Routine category ${category} does not have a matching catalog product.`);
     }
   }
 
   return errors;
+}
+
+function getRoutineCategories(): ProductCategory[] {
+  const routine = createRoutine(sampleAnalysis, { routineLevel: 'standard', primaryGoal: 'hydration' });
+  const routineSteps = [...routine.morning, ...routine.evening, ...routine.weekly];
+  const categories = new Set<ProductCategory>();
+
+  for (const step of routineSteps) {
+    categories.add(getRoutineStepCategory(step));
+  }
+
+  return Array.from(categories);
+}
+
+function getRoutineStepCategory(step: RoutineStep): ProductCategory {
+  const matcher = routineStepCategoryMatchers.find(({ match }) => match.test(step.name));
+
+  if (!matcher) {
+    throw new Error(`Unable to match routine step "${step.name}" to a product category.`);
+  }
+
+  return matcher.category;
 }
 
 const validationErrors = validateProductCatalog();

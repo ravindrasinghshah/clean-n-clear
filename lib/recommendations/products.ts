@@ -1,6 +1,16 @@
-import type { ProductCategory, ProductCatalogItem } from '@/lib/types/skincare';
+export type ProductCategory = 'cleanser' | 'moisturizer' | 'sunscreen' | 'active' | 'exfoliant';
 
-export const routineProductCategories = ['cleanser', 'moisturizer', 'sunscreen', 'active', 'exfoliant'] as const satisfies readonly ProductCategory[];
+export interface ProductCatalogItem {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  link: `https://${string}`;
+  category: ProductCategory;
+  metadata: {
+    routineCategory: ProductCategory;
+  };
+}
 
 export const productCatalog = [
   {
