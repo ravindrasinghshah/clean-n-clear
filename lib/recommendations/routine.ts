@@ -1,5 +1,5 @@
 import { productCatalog, type ProductCategory, type ProductRecommendation } from '@/lib/constants/products';
-import type { RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
+import type { RoutineProduct, RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
 
 const sensitivityTags = ['fragrance-free', 'gentle', 'sensitive-skin'];
 
@@ -84,10 +84,15 @@ function withProducts(steps: RoutineStep[], analysis: SkinAnalysisResult, prefer
   return steps.map((step) => ({ ...step, products: findProductsForStep(step, analysis, preferences) }));
 }
 
-export function findProductsForStep(step: RoutineStep, analysis: SkinAnalysisResult, preferences?: Partial<ScanPreferences>) {
+export function findProductsForStep(step: RoutineStep, analysis: SkinAnalysisResult, preferences?: Partial<ScanPreferences>): RoutineProduct[] {
   const category = categoryForStep(step);
   const limit = productLimit(preferences?.routineLevel);
-  const hasSensitivity = Boolean(preferences?.sensitivities?.trim()) || analysis.skinType === 'sensitive' || analysis.concerns.includes('irritation') || analysis.concerns.includes('redness') || analysis.safetyFlags.length > 0;
+  const hasSensitivity =
+    Boolean(preferences?.sensitivities?.trim()) ||
+    analysis.skinType === 'sensitive' ||
+    analysis.concerns.includes('irritation') ||
+    analysis.concerns.includes('redness') ||
+    analysis.safetyFlags.length > 0;
 
   return productCatalog
     .filter((product) => product.category === category)
@@ -107,13 +112,13 @@ function categoryForStep(step: RoutineStep): ProductCategory {
   return 'treatment';
 }
 
-function productLimit(level?: ScanPreferences['routineLevel']) {
+function productLimit(level?: ScanPreferences['routineLevel']): number {
   if (level === 'minimal') return 1;
   if (level === 'advanced') return 3;
   return 2;
 }
 
-function productScore(product: ProductRecommendation, analysis: SkinAnalysisResult, preferences: Partial<ScanPreferences> | undefined, hasSensitivity: boolean) {
+function productScore(product: ProductRecommendation, analysis: SkinAnalysisResult, preferences: Partial<ScanPreferences> | undefined, hasSensitivity: boolean): number {
   let score = 0;
   if (product.skinTypes.includes(analysis.skinType)) score += 4;
   score += analysis.concerns.filter((concern) => product.concerns.includes(concern)).length * 3;
