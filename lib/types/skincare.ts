@@ -109,3 +109,27 @@ export interface RoutineRecommendation {
   explanation: string;
   disclaimer: string;
 }
+
+export type RoutineProductCategory =
+  | 'cleanser'
+  | 'moisturizer'
+  | 'sunscreen'
+  | 'hydrating serum'
+  | 'niacinamide or vitamin C support'
+  | 'azelaic acid or calming support'
+  | 'salicylic acid or acne support'
+  | 'beginner retinoid support'
+  | 'gentle exfoliation';
+
+export type ProductSafetyTag = 'fragrance-free' | 'sensitive-skin' | 'beginner-friendly' | 'active';
+
+export interface ProductRecommendation {
+  name: string;
+  description: string;
+  price: string;
+  amazonUrl: string;
+  skinTypes: SkinType[];
+  concerns: SkinConcern[];
+  routineCategory: RoutineProductCategory;
+  safetyTags: ProductSafetyTag[];
+}
