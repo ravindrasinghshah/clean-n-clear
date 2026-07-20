@@ -4,9 +4,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { SafetyDisclaimer } from '@/components/SafetyDisclaimer';
 import { getCurrentResult, saveRoutine as saveRoutineToLocalStorage } from '@/lib/storage/routines';
-import type { RoutineRecommendation, SkinAnalysisResult } from '@/lib/types/skincare';
-
-type ScanResult = { analysis: SkinAnalysisResult; routine: RoutineRecommendation };
+import type { ScanResult } from '@/lib/storage/routines';
+import type { RoutineRecommendation } from '@/lib/types/skincare';
 
 export default function ResultsPage() {
   const [result, setResult] = useState<ScanResult>();
@@ -47,6 +46,7 @@ export default function ResultsPage() {
   }
 
   const { analysis, routine } = result;
+  const imageDataUrl = typeof result.imageDataUrl === 'string' && result.imageDataUrl.length > 0 ? result.imageDataUrl : null;
   const confidence = typeof analysis.confidence === 'number' ? Math.round(analysis.confidence * 100) : null;
   const photoRead = analysis.imageQuality?.suitableForAnalysis ? 'Clear' : 'Saved';
   const detectedAttributes = [
@@ -67,8 +67,17 @@ export default function ResultsPage() {
           </header>
 
           <section className="mt-6 rounded-[2rem] bg-accent-soft p-5" aria-labelledby="results-title">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/70">Your scan summary</p>
-            <h1 id="results-title" className="mt-3 text-[2.15rem] font-bold leading-[1.04] tracking-[-0.05em] text-ink">Your personalized routine is ready.</h1>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-ink/70">Your scan summary</p>
+                <h1 id="results-title" className="mt-3 text-[2.15rem] font-bold leading-[1.04] tracking-[-0.05em] text-ink">Your personalized routine is ready.</h1>
+              </div>
+              {imageDataUrl && (
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-white/70 bg-white shadow-soft">
+                  <img className="h-full w-full object-cover" src={imageDataUrl} alt="Selfie used for this routine" />
+                </div>
+              )}
+            </div>
             <p className="mt-3 text-[0.98rem] leading-6 text-ink/70">
               {detectedAttributes.length > 0 ? (
                 <>This photo suggests <strong className="font-semibold text-ink">{detectedAttributes.join(' and ')}</strong>.</>
