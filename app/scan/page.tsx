@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaceCapture } from '@/components/FaceCapture';
 import { PreferenceForm } from '@/components/PreferenceForm';
@@ -10,6 +10,14 @@ import type { ImageQualityAssessment, ImageQualityIssue, RoutineRecommendation, 
 
 const initialPreferences: ScanPreferences = { routineLevel: 'standard', primaryGoal: 'hydration', sensitivities: '', currentRoutine: '' };
 const minimumConfidence = 0.7;
+const loadingMessages = [
+  'Scanning your face...',
+  'Scanned — now checking photo quality...',
+  'Analyzing your skincare goals...',
+  'Generating your routine...',
+];
+const loadingGifSrc =
+  'data:image/gif;base64,R0lGODlhEAAQAPIAAAAAAP///6qqqv///wAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQJCgAAACwAAAAAEAAQAAADLEi63P4wykmrvTjrzbv/YCiOZGmeaKqubOu+cCzPdG3feK7vfO//wKBwSCwYAOw==';
 
 type AnalyzeResponse = {
   status?: 'ready' | 'retake';
@@ -40,6 +48,7 @@ export default function ScanPage() {
   const [image, setImage] = useState('');
   const [preferences, setPreferences] = useState(initialPreferences);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [preparingImage, setPreparingImage] = useState(false);
   const [error, setError] = useState('');
   const [retakeFeedback, setRetakeFeedback] = useState<RetakeFeedback>();
@@ -47,20 +56,30 @@ export default function ScanPage() {
   const actionDisabled = !image || loading || preparingImage || Boolean(retakeFeedback);
   const actionLabel = preparingImage
     ? 'Preparing photo...'
-    : loading
-      ? 'Checking photo and building routine...'
-      : retakeFeedback
-        ? 'Upload a new photo to continue'
-        : 'Analyze and build routine';
+    : retakeFeedback
+      ? 'Upload a new photo to continue'
+      : 'Analyze and build routine';
   const actionHint = preparingImage
     ? 'Preparing your image before analysis.'
     : loading
-      ? 'This can take a moment.'
+      ? 'Analysis in progress.'
       : retakeFeedback
         ? 'Choose a clearer selfie above to continue.'
         : !image
           ? 'Add a selfie to continue.'
           : 'We check photo quality before generating guidance.';
+  const currentLoadingMessage = loadingMessages[loadingStep] ?? loadingMessages[0];
+
+  useEffect(() => {
+    if (!loading) return undefined;
+
+    setLoadingStep(0);
+    const interval = window.setInterval(() => {
+      setLoadingStep((step) => Math.min(step + 1, loadingMessages.length - 1));
+    }, 1800);
+
+    return () => window.clearInterval(interval);
+  }, [loading]);
 
   function handleImageChange(dataUrl: string) {
     setImage(dataUrl);
@@ -183,6 +202,16 @@ export default function ScanPage() {
           </div>
         </div>
       </div>
+
+      {loading && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-ink/30 px-5" role="status" aria-live="polite">
+          <div className="w-full max-w-[360px] rounded-[2rem] bg-white p-6 text-center shadow-soft">
+            <img className="mx-auto h-24 w-24 rounded-full object-cover" src={loadingGifSrc} alt="" aria-hidden="true" />
+            <p className="mt-5 text-xl font-bold tracking-tight text-ink">{currentLoadingMessage}</p>
+            <p className="mt-2 text-sm leading-5 text-ink/70">This usually takes a few moments.</p>
+          </div>
+        </div>
+      )}
 
       <div className="fixed inset-x-0 bottom-0 z-20">
         <div className="mx-auto w-full max-w-[430px] border-t border-ink/10 bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] pt-3 backdrop-blur">
