@@ -190,6 +190,8 @@ function ResultState({ title, description, showScanAction = false }: { title: st
 }
 
 function RoutineSection({ title, label: sectionLabel, steps }: { title: string; label: string; steps: RoutineRecommendation['morning'] }) {
+  const hasProductRecommendations = steps.some((step) => step.products && step.products.length > 0);
+
   return (
     <section className="rounded-[2rem] bg-white p-5 shadow-soft" aria-labelledby={`${sectionLabel.toLowerCase()}-routine-title`}>
       <div className="flex items-center gap-3">
@@ -199,14 +201,40 @@ function RoutineSection({ title, label: sectionLabel, steps }: { title: string; 
           <h2 id={`${sectionLabel.toLowerCase()}-routine-title`} className="mt-1 text-2xl font-bold tracking-tight text-ink">{title}</h2>
         </div>
       </div>
+      {hasProductRecommendations && (
+        <p className="mt-4 rounded-2xl bg-accent-soft p-3 text-xs font-medium leading-5 text-ink/70">
+          Product links are optional shopping suggestions. Check ingredient lists and patch test new products.
+        </p>
+      )}
       <ol className="mt-5 space-y-3">
         {steps.map((step, index) => (
           <li className="flex gap-3 rounded-[1.5rem] border border-ink/10 bg-white p-4" key={step.name}>
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-bold text-ink">{index + 1}</span>
-            <article>
+            <article className="min-w-0 flex-1">
               <h3 className="font-bold text-ink">{step.name}</h3>
               <p className="mt-1 text-sm leading-5 text-ink/70">{step.why}</p>
               <p className="mt-3 text-sm font-semibold leading-5 text-ink">{step.guidance}</p>
+              {step.products && step.products.length > 0 && (
+                <div className="mt-4 space-y-3" aria-label={`Product suggestions for ${step.name}`}>
+                  {step.products.map((product) => (
+                    <article className="rounded-2xl border border-accent/25 bg-accent-soft p-3" key={`${step.name}-${product.retailer}-${product.name}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h4 className="text-sm font-bold text-ink">{product.name}</h4>
+                          <p className="mt-1 text-xs leading-5 text-ink/70">{product.description}</p>
+                        </div>
+                        <p className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-ink">{product.price}</p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <span className="text-xs font-semibold text-ink/70">{product.retailer}</span>
+                        <a className="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-ink/80" href={product.url} rel="noopener noreferrer sponsored" target="_blank">
+                          View product
+                        </a>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </article>
           </li>
         ))}
