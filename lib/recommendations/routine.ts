@@ -1,9 +1,10 @@
-import type { RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
+import type { ProductCategory, RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
 
 const sunscreen: RoutineStep = {
   name: 'Broad-spectrum SPF 30+',
   why: 'Daily sunscreen helps protect against UV damage and supports dark spot and anti-aging goals.',
-  guidance: 'Apply generously every morning and reapply when outdoors.'
+  guidance: 'Apply generously every morning and reapply when outdoors.',
+  category: 'sunscreen'
 };
 
 export function createRoutine(analysis: SkinAnalysisResult, preferences?: Partial<ScanPreferences>): RoutineRecommendation {
@@ -13,12 +14,14 @@ export function createRoutine(analysis: SkinAnalysisResult, preferences?: Partia
     {
       name: analysis.skinType === 'dry' ? 'Hydrating cleanser or water rinse' : 'Gentle low-pH cleanser',
       why: 'A mild cleanse removes oil and residue without stripping the skin barrier.',
-      guidance: 'Massage gently for 30-60 seconds; avoid scrubs.'
+      guidance: 'Massage gently for 30-60 seconds; avoid scrubs.',
+      category: 'cleanser'
     },
     {
       name: analysis.skinType === 'oily' ? 'Lightweight gel moisturizer' : 'Barrier-supporting moisturizer',
       why: 'Moisturizer helps balance the skin barrier even when skin feels oily.',
-      guidance: 'Use a thin layer; choose fragrance-free if sensitive.'
+      guidance: 'Use a thin layer; choose fragrance-free if sensitive.',
+      category: 'moisturizer'
     },
     sunscreen
   ];
@@ -27,23 +30,26 @@ export function createRoutine(analysis: SkinAnalysisResult, preferences?: Partia
     {
       name: 'Gentle cleanser',
       why: 'Evening cleansing removes sunscreen, sweat, and pollutants.',
-      guidance: 'Double cleanse only when wearing heavy sunscreen or makeup.'
+      guidance: 'Double cleanse only when wearing heavy sunscreen or makeup.',
+      category: 'cleanser'
     },
     {
       name: chooseActive(analysis, primaryGoal),
       why: activeReason(analysis, primaryGoal),
-      guidance: 'Start 2 nights per week, then increase only if comfortable.'
+      guidance: 'Start 2 nights per week, then increase only if comfortable.',
+      category: 'active'
     },
     {
       name: analysis.skinType === 'dry' || analysis.concerns.includes('irritation') ? 'Richer moisturizer' : 'Simple moisturizer',
       why: 'Nighttime barrier support can reduce tightness and irritation.',
-      guidance: 'Apply after actives; skip actives if skin stings or peels.'
+      guidance: 'Apply after actives; skip actives if skin stings or peels.',
+      category: 'moisturizer'
     }
   ];
 
   const weekly: RoutineStep[] = minimal
     ? []
-    : [{ name: 'Optional gentle exfoliation', why: 'Can help with dullness or uneven texture.', guidance: 'Limit to once weekly; do not combine with retinoids the same night.' }];
+    : [{ name: 'Optional gentle exfoliation', why: 'Can help with dullness or uneven texture.', guidance: 'Limit to once weekly; do not combine with retinoids the same night.', category: 'exfoliant' }];
 
   const avoidOrIntroduceSlowly = [
     'Avoid starting multiple actives at the same time.',
@@ -95,4 +101,8 @@ function activeReason(analysis: SkinAnalysisResult, primaryGoal?: ScanPreference
 
 function goalLabel(goal: string) {
   return goal.replace('-', ' ');
+}
+
+export function getRoutineCategories(routine: RoutineRecommendation): ProductCategory[] {
+  return Array.from(new Set([...routine.morning, ...routine.evening, ...routine.weekly].map((step) => step.category)));
 }
