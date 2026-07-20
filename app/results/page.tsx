@@ -207,40 +207,12 @@ function RoutineSection({ title, label: sectionLabel, steps }: { title: string; 
               <h3 className="font-bold text-ink">{step.name}</h3>
               <p className="mt-1 text-sm leading-5 text-ink/70">{step.why}</p>
               <p className="mt-3 text-sm font-semibold leading-5 text-ink">{step.guidance}</p>
-              {Array.isArray(step.products) && step.products.length > 0 && <ProductRecommendations products={step.products} />}
             </article>
           </li>
         ))}
       </ol>
     </section>
   );
-}
-
-function ProductRecommendations({ products }: { products: NonNullable<RoutineRecommendation['morning'][number]['products']> }) {
-  return (
-    <div className="mt-4 rounded-2xl bg-accent-soft/70 p-3">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-ink/70">Product ideas</p>
-      <ul className="mt-2 space-y-2">
-        {products.map((product) => (
-          <li className="text-sm leading-5 text-ink/80" key={`${product.brand ?? 'brand'}-${product.name}`}>
-            {product.url ? (
-              <a className="font-semibold text-ink underline decoration-ink/30 underline-offset-2" href={product.url} rel="noreferrer" target="_blank">
-                {formatProductName(product)}
-              </a>
-            ) : (
-              <span className="font-semibold text-ink">{formatProductName(product)}</span>
-            )}
-            {product.price && <span> · {product.price}</span>}
-            {product.reason && <p className="text-xs leading-5 text-ink/65">{product.reason}</p>}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function formatProductName(product: NonNullable<RoutineRecommendation['morning'][number]['products']>[number]) {
-  return [product.brand, product.name].filter(Boolean).join(' ');
 }
 
 function label(value: string) {

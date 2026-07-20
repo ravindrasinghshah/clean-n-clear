@@ -3,6 +3,15 @@ import type { RoutineRecommendation, RoutineStep, SkinAnalysisResult } from '@/l
 export type ScanResult = { analysis: SkinAnalysisResult; routine: RoutineRecommendation; imageDataUrl: string };
 export type SavedRoutine = ScanResult & { savedAt: string };
 
+type StoredRoutineStep = RoutineStep & { products?: unknown };
+type StoredRoutineRecommendation = Omit<RoutineRecommendation, 'morning' | 'evening' | 'weekly'> & {
+  morning: StoredRoutineStep[];
+  evening: StoredRoutineStep[];
+  weekly: StoredRoutineStep[];
+};
+type StoredScanResult = Omit<ScanResult, 'routine'> & { routine: StoredRoutineRecommendation };
+type StoredSavedRoutine = StoredScanResult & { savedAt: string };
+
 const currentResultKey = 'clean-n-clear-current-result';
 const savedRoutinesKey = 'clean-n-clear-saved-routines';
 
@@ -15,7 +24,7 @@ function readJson<T>(key: string): T | null {
   }
 }
 
-function normalizeStep(step: RoutineStep): RoutineStep {
+function normalizeStep<T extends StoredRoutineStep>(step: T): T {
   if (!Array.isArray(step.products)) {
     const stepWithoutProducts = { ...step };
     delete stepWithoutProducts.products;
@@ -25,7 +34,7 @@ function normalizeStep(step: RoutineStep): RoutineStep {
   return step;
 }
 
-function normalizeRoutine(routine: RoutineRecommendation): RoutineRecommendation {
+function normalizeRoutine<T extends StoredRoutineRecommendation>(routine: T): T {
   return {
     ...routine,
     morning: Array.isArray(routine.morning) ? routine.morning.map(normalizeStep) : [],
@@ -35,7 +44,7 @@ function normalizeRoutine(routine: RoutineRecommendation): RoutineRecommendation
   };
 }
 
-function normalizeScanResult<T extends ScanResult>(result: T): T {
+function normalizeScanResult<T extends StoredScanResult>(result: T): T {
   return {
     ...result,
     routine: normalizeRoutine(result.routine)
@@ -47,18 +56,18 @@ export function saveCurrentResult(result: ScanResult) {
 }
 
 export function getCurrentResult() {
-  const result = readJson<ScanResult>(currentResultKey);
+  const result = readJson<StoredScanResult>(currentResultKey);
   return result ? normalizeScanResult(result) : null;
 }
 
 export function getSavedRoutines() {
-  const savedRoutines = readJson<SavedRoutine[]>(savedRoutinesKey);
+  const savedRoutines = readJson<StoredSavedRoutine[]>(savedRoutinesKey);
   return Array.isArray(savedRoutines) ? savedRoutines.map(normalizeScanResult) : [];
 }
 
 export function saveRoutine(result: ScanResult) {
   const routines = getSavedRoutines();
-  const savedRoutine: SavedRoutine = { ...normalizeScanResult(result), savedAt: new Date().toISOString() };
+  const savedRoutine: StoredSavedRoutine = { ...normalizeScanResult(result), savedAt: new Date().toISOString() };
 
   window.localStorage.setItem(savedRoutinesKey, JSON.stringify([savedRoutine, ...routines].slice(0, 20)));
   return savedRoutine;

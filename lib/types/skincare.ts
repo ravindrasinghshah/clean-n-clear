@@ -82,13 +82,6 @@ export interface RoutineStep {
   name: string;
   why: string;
   guidance: string;
-  products?: {
-    name: string;
-    brand?: string;
-    url?: string;
-    price?: string;
-    reason?: string;
-  }[];
 }
 
 export interface RoutineRecommendation {
