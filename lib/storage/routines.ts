@@ -1,6 +1,6 @@
 import type { RoutineRecommendation, SkinAnalysisResult } from '@/lib/types/skincare';
 
-export type ScanResult = { analysis: SkinAnalysisResult; routine: RoutineRecommendation };
+export type ScanResult = { analysis: SkinAnalysisResult; routine: RoutineRecommendation; imageDataUrl: string };
 export type SavedRoutine = ScanResult & { savedAt: string };
 
 const currentResultKey = 'clean-n-clear-current-result';

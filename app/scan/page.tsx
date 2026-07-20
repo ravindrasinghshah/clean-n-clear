@@ -126,7 +126,7 @@ export default function ScanPage() {
         return;
       }
 
-      saveCurrentResult({ analysis: data.analysis, routine: data.routine });
+      saveCurrentResult({ analysis: data.analysis, routine: data.routine, imageDataUrl: image });
       router.push('/results');
     } catch {
       setError('We could not reach the analysis service. Please check your connection and try again.');
