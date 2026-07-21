@@ -214,28 +214,26 @@ function RoutineSection({ title, label: sectionLabel, steps }: { title: string; 
           const products = step.products ?? [];
 
           return (
-            <li className="flex gap-3 rounded-[1.5rem] border border-ink/10 bg-white p-4" key={step.name}>
-              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-soft text-sm font-bold text-ink">{index + 1}</span>
-              <article className="min-w-0 flex-1">
-                <h3 className="font-bold text-ink">{step.name}</h3>
+            <li className="rounded-[1.5rem] border border-ink/10 bg-white p-4" key={step.name}>
+              <article>
+                <h3 className="font-bold text-ink"><span className="mr-1.5 text-ink/55">{index + 1}.</span>{step.name}</h3>
                 <p className="mt-1 text-sm leading-5 text-ink/70">{step.why}</p>
                 <p className="mt-3 text-sm font-semibold leading-5 text-ink">{step.guidance}</p>
                 {products.length > 0 && (
-                  <div className="mt-4 space-y-3" aria-label={`Product suggestions for ${step.name}`}>
+                  <div className="mt-2 space-y-1.5" aria-label={`Product suggestions for ${step.name}`}>
                     {products.map((product) => (
-                      <article className="rounded-2xl border border-accent/25 bg-accent-soft p-3" key={`${step.name}-${product.retailer}-${product.name}`}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h4 className="text-sm font-bold text-ink">{product.name}</h4>
-                            <p className="mt-1 text-xs leading-5 text-ink/70">{product.description}</p>
+                      <article className="rounded-2xl border border-accent/25 bg-accent-soft p-2" key={`${step.name}-${product.retailer}-${product.name}`}>
+                        <div className="flex items-start gap-2">
+                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-white/80 bg-white">
+                            <img className="h-full w-full object-cover" src={product.imageUrl ?? '/images/products/default.svg'} alt="" />
                           </div>
-                          <p className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-ink">{product.price}</p>
-                        </div>
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <span className="text-xs font-semibold text-ink/70">{product.retailer}</span>
-                          <a className="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-ink/80" href={product.link} rel="noopener noreferrer sponsored" target="_blank">
-                            View product
-                          </a>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-bold text-ink">{product.name}</h4>
+                            <a className="mt-1 inline-flex rounded-full bg-[#ff9900] px-2 py-1 text-[11px] font-bold text-[#131921] transition-colors hover:bg-[#ffad33]" href={product.link} rel="noopener noreferrer sponsored" target="_blank">
+                              View on Amazon
+                            </a>
+                            {product.description && <p className="mt-1 text-xs leading-5 text-ink/70">{product.description}</p>}
+                          </div>
                         </div>
                       </article>
                     ))}

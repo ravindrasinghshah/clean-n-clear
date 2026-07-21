@@ -1,4 +1,4 @@
-import { productCatalog, type ProductCategory, type ProductRecommendation as RoutineCatalogProduct, type RoutineProduct } from '@/lib/constants/routine-products';
+import { productCatalog, type ProductCategory, type ProductRecommendation as RoutineCatalogProduct } from '@/lib/constants/routine-products';
 import type { ProductRecommendation, RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
 
 const sensitivityTags = ['fragrance-free', 'gentle', 'sensitive-skin'];
@@ -106,6 +106,7 @@ export function findProductsForStep(step: RoutineStep, analysis: SkinAnalysisRes
       description: `A ${product.tags.slice(0, 2).join(', ')} option for this routine step.`,
       price: 'Check retailer',
       link: `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}`,
+      imageUrl: `/images/products/${product.category}.svg`,
       retailer: 'Amazon',
       category: product.category,
       skinTypes: product.skinTypes,
