@@ -123,7 +123,7 @@ export type RoutineProductCategory =
 
 export type ProductSafetyTag = 'fragrance-free' | 'sensitive-skin' | 'beginner-friendly' | 'active';
 
-export interface ProductRecommendation {
+export interface CatalogProductRecommendation {
   name: string;
   description: string;
   price: string;

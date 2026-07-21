@@ -1,6 +1,6 @@
-import type { ProductRecommendation } from '@/lib/types/skincare';
+import type { CatalogProductRecommendation } from '@/lib/types/skincare';
 
-export const productCatalog: ProductRecommendation[] = [
+export const productCatalog: CatalogProductRecommendation[] = [
   {
     name: 'CeraVe Hydrating Facial Cleanser',
     description: 'Creamy, non-foaming cleanser for a comfortable morning or evening cleanse.',

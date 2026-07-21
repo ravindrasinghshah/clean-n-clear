@@ -7,17 +7,7 @@ import { getCurrentResult, saveRoutine as saveRoutineToLocalStorage } from '@/li
 import type { ScanResult } from '@/lib/storage/routines';
 import type { RoutineRecommendation } from '@/lib/types/skincare';
 
-type RoutineProduct = {
-  name: string;
-  description: string;
-  price: string;
-  retailer: string;
-  url: string;
-};
-
-type RoutineStepWithProducts = RoutineRecommendation['morning'][number] & {
-  products?: RoutineProduct[];
-};
+type RoutineStepWithProducts = RoutineRecommendation['morning'][number];
 
 export default function ResultsPage() {
   const [result, setResult] = useState<ScanResult>();
@@ -243,7 +233,7 @@ function RoutineSection({ title, label: sectionLabel, steps }: { title: string; 
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3">
                           <span className="text-xs font-semibold text-ink/70">{product.retailer}</span>
-                          <a className="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-ink/80" href={product.url} rel="noopener noreferrer sponsored" target="_blank">
+                          <a className="rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-ink/80" href={product.link} rel="noopener noreferrer sponsored" target="_blank">
                             View product
                           </a>
                         </div>

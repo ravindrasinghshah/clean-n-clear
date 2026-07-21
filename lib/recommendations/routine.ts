@@ -1,5 +1,5 @@
-import { productCatalog, type ProductCategory, type ProductRecommendation, type RoutineProduct } from '@/lib/constants/routine-products';
-import type { RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
+import { productCatalog, type ProductCategory, type ProductRecommendation as RoutineCatalogProduct, type RoutineProduct } from '@/lib/constants/routine-products';
+import type { ProductRecommendation, RoutineRecommendation, RoutineStep, ScanPreferences, SkinAnalysisResult } from '@/lib/types/skincare';
 
 const sensitivityTags = ['fragrance-free', 'gentle', 'sensitive-skin'];
 
@@ -84,7 +84,7 @@ function withProducts(steps: RoutineStep[], analysis: SkinAnalysisResult, prefer
   return steps.map((step) => ({ ...step, products: findProductsForStep(step, analysis, preferences) }));
 }
 
-export function findProductsForStep(step: RoutineStep, analysis: SkinAnalysisResult, preferences?: Partial<ScanPreferences>): RoutineProduct[] {
+export function findProductsForStep(step: RoutineStep, analysis: SkinAnalysisResult, preferences?: Partial<ScanPreferences>): ProductRecommendation[] {
   const category = categoryForStep(step);
   const limit = productLimit(preferences?.routineLevel);
   const hasSensitivity =
@@ -100,7 +100,19 @@ export function findProductsForStep(step: RoutineStep, analysis: SkinAnalysisRes
     .map((product, index) => ({ product, index, score: productScore(product, analysis, preferences, hasSensitivity) }))
     .sort((left, right) => right.score - left.score || left.index - right.index)
     .slice(0, limit)
-    .map(({ product }) => ({ name: product.name, category: product.category, tags: product.tags }));
+    .map(({ product }) => ({
+      id: `${product.category}-${product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`,
+      name: product.name,
+      description: `A ${product.tags.slice(0, 2).join(', ')} option for this routine step.`,
+      price: 'Check retailer',
+      link: `https://www.amazon.com/s?k=${encodeURIComponent(product.name)}`,
+      retailer: 'Amazon',
+      category: product.category,
+      skinTypes: product.skinTypes,
+      concerns: product.concerns,
+      routineStep: step.name,
+      tags: product.tags
+    }));
 }
 
 function categoryForStep(step: RoutineStep): ProductCategory {
@@ -118,7 +130,7 @@ function productLimit(level?: ScanPreferences['routineLevel']): number {
   return 2;
 }
 
-function productScore(product: ProductRecommendation, analysis: SkinAnalysisResult, preferences: Partial<ScanPreferences> | undefined, hasSensitivity: boolean): number {
+function productScore(product: RoutineCatalogProduct, analysis: SkinAnalysisResult, preferences: Partial<ScanPreferences> | undefined, hasSensitivity: boolean): number {
   let score = 0;
   if (product.skinTypes.includes(analysis.skinType)) score += 4;
   score += analysis.concerns.filter((concern) => product.concerns.includes(concern)).length * 3;
